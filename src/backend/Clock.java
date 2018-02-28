@@ -1,30 +1,76 @@
 package backend;
 
 import java.time.LocalTime;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.Comparator;
+import java.util.PriorityQueue;
 
 public class Clock {
 	
-	private class Alarm{
-		private LocalTime t;
+	/**
+	 * 
+	 * @author Kurt Floyd
+	 * Uses a comparator to sort based on time. 
+	 *
+	 */
+	private class Alarm implements Comparator<Alarm>{
+		private final LocalTime time; //The time the alarm goes off
+		private final boolean repeat; //Whether the alarm repeats
+		//private final int tone; Dummy variable, different tones to be implemented
+		
+		Alarm(LocalTime t, boolean r){
+			time = t;
+			repeat = r;
+		}
+		
+		public void setTone(){
+			//Do nothing, to be implemented
+		}
+		
+		public int getTone() {
+			return 0; //Does nothing, to be implemented
+		}
+		
+		public boolean doesRepeat() {
+			return repeat;
+		}
+		
+		public LocalTime getTime() {
+			return this.time;
+			
+		}
+
+		@Override
+		public int compare(Alarm a1, Alarm a2) {
+			return a1.getTime().compareTo(a2.getTime());
+		}
 		
 		
 	}
 	
-	private BlockingQueue<Alarm> alarms;
+	//A queue of all alarms.
+	private PriorityQueue<Alarm> alarms;
 	
 	
 	
 	Clock(){
-		alarms = new LinkedBlockingQueue<Alarm>();
+		alarms = new PriorityQueue<Alarm>();
 	}
 	
-	public void setAlarm(LocalTime t) {
-		
+	/**
+	 * Set alarm with the default tone
+	 * @param t
+	 * @param r whether the alarm should repeat or not
+	 */
+	public void setAlarm(LocalTime t, boolean r) {
+		Alarm a = new Alarm(t, r);
+		alarms.add(a);
 	}
 	
-	public void unSetAlarm(LocalTime t) {
+	/** 
+	 * Set alarm with a custom tone
+	 * @param t the time and date the alarm should go off
+	 */
+	public void unSetAlarm(LocalTime t, boolean r) {
 		
 	}
 	
