@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class linuxTimeControl {
+public class LinuxTimeControl {
     public static void setTime(int hr, int min) throws IOException //input 24hr time
     {
         ArrayList<String> argumentList = new ArrayList<>();
