@@ -42,10 +42,4 @@ public class MainClockProcess {
 	private static void checkInput(){
 		
 	}
-	
-	//Dummy function, needs to 
-	private void tripAlarm(){
-		
-	}
-
 }

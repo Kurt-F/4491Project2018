@@ -15,8 +15,10 @@ import java.util.PriorityQueue;
 public class Clock {
 	//A queue of all alarms.
 	private LinkedList<Alarm> alarms;
+	private final Connection out;
 	
 	Clock(){
+		out = new Connection();
 		alarms = new LinkedList<Alarm>();
 	}
 	
