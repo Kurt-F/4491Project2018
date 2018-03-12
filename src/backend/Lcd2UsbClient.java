@@ -6,13 +6,13 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
-public class lcd2usbClient
+public class Lcd2UsbClient
 {
     private Socket lcdSocket;
     private PrintWriter socketOut;
     private BufferedReader socketIn;
 
-    public lcd2usbClient() throws IOException //localhost:8080 default
+    public Lcd2UsbClient() throws IOException //localhost:8080 default
     {
         lcdSocket = new Socket("localhost", 8080);
         socketOut = new PrintWriter(lcdSocket.getOutputStream(), true);
