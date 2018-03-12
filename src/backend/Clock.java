@@ -3,7 +3,11 @@ package backend;
 import java.time.LocalTime;
 import java.util.Comparator;
 import java.util.PriorityQueue;
-
+/**
+ * 
+ * @author Kurt Floyd
+ *
+ */
 public class Clock {
 	
 	/**
@@ -12,7 +16,7 @@ public class Clock {
 	 * Uses a comparator to sort based on time. 
 	 *
 	 */
-	private class Alarm implements Comparator<Alarm>{
+	private class Alarm implements Comparator<Alarm> {
 		private final LocalTime time; //The time the alarm goes off
 		private final boolean repeat; //Whether the alarm repeats
 		//private final int tone; Dummy variable, different tones to be implemented
@@ -43,7 +47,6 @@ public class Clock {
 		public int compare(Alarm a1, Alarm a2) {
 			return a1.getTime().compareTo(a2.getTime());
 		}
-		
 		
 	}
 	
