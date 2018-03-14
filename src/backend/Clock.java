@@ -17,7 +17,7 @@ public class Clock {
 	private LinkedList<Alarm> alarms;
 	private final Connection out;
 	
-	Clock(){
+	public Clock(){
 		out = new Connection();
 		alarms = new LinkedList<Alarm>();
 	}
