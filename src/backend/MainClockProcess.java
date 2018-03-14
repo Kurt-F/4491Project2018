@@ -51,7 +51,7 @@ public class MainClockProcess {
 
 		Clock c = new Clock(controlPanel);
 		//c.setAlarm(LocalTime.now().plusSeconds(30), LocalDate.now(), true);
-		c.setAlarm(LocalTime.now().plusSeconds(3), LocalDate.now(), false);
+		//c.setAlarm(LocalTime.now().plusSeconds(3), LocalDate.now(), false);
 		// Ideally, there'd be a check to see when the next alarm was and sleep until then or until an input interrupt woke it, but this works
 		do {
 			try {
@@ -64,7 +64,7 @@ public class MainClockProcess {
 			//Get input (running should be set to true or false here)
 			running = true;
 			//Resolve Input
-			checkInput(lcd, controlPanel);
+			checkInput(lcd, controlPanel, c);
 			//Check to see if an alarm would usually be set 
 			c.tick(instant, today);
 			//Check alarms
@@ -75,9 +75,9 @@ public class MainClockProcess {
 	}
 	
 	//Check physical input as well as APIs. Dummy function for now.
-	private static void checkInput(Lcd2UsbClient display, GpioPinDigitalInput buttons[]){
+	private static void checkInput(Lcd2UsbClient display, GpioPinDigitalInput[] buttons, Clock clock){
 		if(buttons[0].isLow()){//pressing the physical button connects the gpio pin to ground.
-			Settings settingsMenu = new Settings(display, buttons);
+			Settings settingsMenu = new Settings(display, buttons, clock);
 			try {
 				settingsMenu.start();
 			} catch (InterruptedException e) {
