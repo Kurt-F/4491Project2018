@@ -27,7 +27,7 @@ public class Connection {
 			System.err.println("Cannot find host for some reason, this should never happen");
 			System.exit(1);
 		} catch (IOException e) {
-			System.err.println("Local server not working probably");
+			System.err.println("Local GUI server not working probably");
 		}
 		//TODO: Finish actually setting up the socket so that it works with Jacob's protocol
 	}
