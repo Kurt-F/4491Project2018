@@ -10,12 +10,18 @@ public class MainClockProcess {
 
 	public static void main(String[] args) {
 		Clock c = new Clock();
+		System.out.println("Adding alarm five seconds from now");
 		c.setAlarm(LocalTime.now().plusSeconds(5), LocalDate.now(), true, "", "");
+		System.out.println("Adding alarm five seconds from now");
 		c.setAlarm(LocalTime.now().plusSeconds(3), LocalDate.now(), true, "", "");
+		System.out.println("Adding alarm thirty seconds from now.");
+		c.setAlarm(LocalTime.now().plusSeconds(30), LocalDate.now(), true, "", "");
+
 
 		//Main loop
 		// Ideally, there'd be a check to see when the next alarm was and sleep until then or until an input interrupt woke it, but this works
-
+		//JSON test
+		
 		do {
 			LocalTime instant = LocalTime.now();
 			LocalDate today = LocalDate.now();

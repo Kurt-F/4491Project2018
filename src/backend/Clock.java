@@ -1,13 +1,20 @@
 package backend;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.ProtocolException;
+import java.net.URL;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedList;
-import java.util.PriorityQueue;
+import org.json.*;
+
 /**
  * 
  * @author Kurt Floyd
@@ -17,7 +24,8 @@ public class Clock {
 	//A queue of all alarms.
 	private LinkedList<Alarm> alarms;
 	private Lcd2UsbClient out;
-	
+	private String lastCondition = "";
+	private static int numReqs = 10;
 	Clock(){
 		try {
 			out = new Lcd2UsbClient();
@@ -40,9 +48,10 @@ public class Clock {
 		//If there are no alarms set to go off today, don't bother checking. 
 		if(alarms.peek() != null){
 		if(traffic != null)
-			t.plus(traffic);
-		if(weather != null)
-			t.plus(weather);
+			t = t.plus(traffic);
+	
+		t = t.plus(weather);
+
 		
 		//If the shifted time either passed by or is at the soonest alarm time(s), trip it/them.
 		while(!alarms.isEmpty() && alarms.getFirst().getTime().compareTo(t) <= 0 && alarms.getFirst().getDay().equals(d)){
@@ -116,26 +125,68 @@ public class Clock {
 	
 	/**
 	 * Uses the google API to find the additional time needed to 
+	 * TODO: Finish this and the other getxxxxShift method
 	 * @return
 	 */
 	private Duration getTrafficShift(Alarm a){
 		String APIKey = "";
+		
+		//Get the endpoints of the route associated with this alarm
+		String start = a.getStart();
+		String end = a.getEnd();
+		
 		return null;
 	}
 	
 	private Duration getWeatherShift(Alarm a){
-		String APIKey = "";
-		String start = a.getStart();
-		String end = a.getEnd();
+		if(numReqs < 5) {
+		URL url;
+		String APIKey = "82fb18f2447c8171ee812653fb3be5ce"; //TODO: Load from file.
+		String cityname = "Atlanta"; //TODO: Variable city
+		String rootURL = "http://api.openweathermap.org/data/2.5/weather?q=";
+		try {
+			url = new URL(rootURL + cityname + "&appid=" + APIKey);
+			HttpURLConnection con = (HttpURLConnection) url.openConnection();
+			con.setRequestMethod("GET");
+			//Test code to read http connection
+			InputStream in = con.getInputStream();
+			BufferedReader read = new BufferedReader(new InputStreamReader(in));
+			StringBuilder result = new StringBuilder();
+			String line;
+			while((line = read.readLine()) != null) {
+			    result.append(line);
+			}
+			//Convert to JSON
+			JSONObject wdata = new JSONObject(result.toString());
+			//TODO: More sophisticated time adding algorithm
+			//String main = wdata.get("weather");
+			String data = wdata.get("weather").toString();
+			data = data.substring(1, data.length() - 1);
+			JSONObject j = new JSONObject(data);
+			String main = j.getString("main");
+			if(main.equals("Clear"))
+				return Duration.ZERO.minusMinutes(5);
+			else
+				return Duration.ZERO.plusMinutes(10);
+		} catch (MalformedURLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ProtocolException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}		
+		
 		return null;
+		}
+		return Duration.ZERO.plusSeconds(5);
 	}
-	
-	//A way to add extra time to whatever time google says it'll take to get there.
-	//Unimplemented atm, may not be useful
-	private LocalTime getTimeTransform(LocalTime t){
-		return null;
-	}
-	
+		
 	
 	/**
 	 * 
