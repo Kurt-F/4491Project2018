@@ -42,7 +42,7 @@ public class AlarmPlayer {
             if(controlPanel[0].isLow()){
                 playbackProcess.destroy();
                 running = false;
-                while(controlPanel[3].isLow()){
+                while(controlPanel[0].isLow()){
                     try {
                         Thread.sleep(50);
                     } catch (InterruptedException e) {

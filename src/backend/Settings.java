@@ -54,17 +54,21 @@ public class Settings {
             }
             else if (controlPanel[1].isLow()){//select
                 if(cursorPos == 0){
+                    while(controlPanel[1].isLow()) {
+                        Thread.sleep(50);
+                    }
                     timeSettings();
                 }
-                else if (cursorPos == 1){//menu
+                else if (cursorPos == 1){
+                    while(controlPanel[1].isLow()) {
+                        Thread.sleep(50);
+                    }
                     dateSettings();
+
                 }
                 displayMenu(cursorPos, topLevelEntries);
-                while(controlPanel[1].isLow()){
-                    Thread.sleep(50);
-                }
             }
-            else if(controlPanel[0].isLow()){
+            else if(controlPanel[0].isLow()){//menu
                 active = false;
                 while(controlPanel[0].isLow()){
                     Thread.sleep(50);
