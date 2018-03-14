@@ -1,5 +1,7 @@
 package backend;
 
+import com.pi4j.io.gpio.GpioPinDigitalInput;
+
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -16,10 +18,12 @@ public class Clock {
 	//A queue of all alarms.
 	private LinkedList<Alarm> alarms;
 	private final Connection out;
+	private GpioPinDigitalInput controlPanel[];
 	
-	public Clock(){
+	public Clock(GpioPinDigitalInput controlPanel[]){
 		out = new Connection();
 		alarms = new LinkedList<Alarm>();
+		this.controlPanel = controlPanel;
 	}
 	
 	/**
@@ -80,7 +84,8 @@ public class Clock {
 	
 	private void tripAlarm(Alarm a){
 		//Code to actually make alarm sound etc goes here
-		//Placeholder to show that an alarm has been tripped 
+		//Placeholder to show that an alarm has been tripped
+		AlarmPlayer.loopAlarm(controlPanel);
 		System.out.println("Alarm set for " + a.getTime().toString() + " has been tripped!");
 	}
 	

@@ -35,10 +35,6 @@ public class MainClockProcess {
 		lcd.setText(2, "%x");
 		lcd.setText(3," ");
 
-		Clock c = new Clock();
-		//c.setAlarm(LocalTime.now().plusSeconds(30), LocalDate.now(), true);
-		//c.setAlarm(LocalTime.now().plusSeconds(3), LocalDate.now(), true);
-
 		//Create GPIO controller and buttons
 		final GpioController gpio = GpioFactory.getInstance();
 		//Buttons physically connect their GPIO pin to ground when pressed, so pull-up resistor is used here.
@@ -53,6 +49,9 @@ public class MainClockProcess {
 		//Create ArrayList for buttons to pass for settings menu functions.
 		GpioPinDigitalInput controlPanel[] = {menuButton, selectButton, downButton, upButton};
 
+		Clock c = new Clock(controlPanel);
+		//c.setAlarm(LocalTime.now().plusSeconds(30), LocalDate.now(), true);
+		c.setAlarm(LocalTime.now().plusSeconds(3), LocalDate.now(), false);
 		// Ideally, there'd be a check to see when the next alarm was and sleep until then or until an input interrupt woke it, but this works
 		do {
 			try {
