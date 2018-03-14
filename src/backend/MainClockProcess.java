@@ -22,7 +22,7 @@ public class MainClockProcess {
 
 	public static void main(String[] args) {
 
-		System.out.println("Drawing deafult display...");//Display default display
+		//Display default display
 		Lcd2UsbClient lcd;
 		try {
 			lcd = new Lcd2UsbClient();
@@ -39,7 +39,7 @@ public class MainClockProcess {
 		//c.setAlarm(LocalTime.now().plusSeconds(30), LocalDate.now(), true);
 		//c.setAlarm(LocalTime.now().plusSeconds(3), LocalDate.now(), true);
 
-		System.out.println("Connecting to GPIO...");//Create GPIO controller and buttons
+		//Create GPIO controller and buttons
 		final GpioController gpio = GpioFactory.getInstance();
 		//Buttons physically connect their GPIO pin to ground when pressed, so pull-up resistor is used here.
 		GpioPinDigitalInput menuButton = gpio.provisionDigitalInputPin(RaspiPin.GPIO_01,
@@ -53,7 +53,7 @@ public class MainClockProcess {
 		//Create ArrayList for buttons to pass for settings menu functions.
 		GpioPinDigitalInput controlPanel[] = {menuButton, selectButton, downButton, upButton};
 
-		System.out.println("Entering main loop..");// Ideally, there'd be a check to see when the next alarm was and sleep until then or until an input interrupt woke it, but this works
+		// Ideally, there'd be a check to see when the next alarm was and sleep until then or until an input interrupt woke it, but this works
 		do {
 			try {
 				Thread.sleep(100);
@@ -69,7 +69,7 @@ public class MainClockProcess {
 			//Check to see if an alarm would usually be set 
 			c.tick(instant, today);
 			//Check alarms
-			System.out.println("Completed a loop...");
+
 		} while (running);
 
 
@@ -78,7 +78,6 @@ public class MainClockProcess {
 	//Check physical input as well as APIs. Dummy function for now.
 	private static void checkInput(Lcd2UsbClient display, GpioPinDigitalInput buttons[]){
 		if(buttons[0].isLow()){//pressing the physical button connects the gpio pin to ground.
-			System.out.println("Entering Menu...");
 			Settings settingsMenu = new Settings(display, buttons);
 			try {
 				settingsMenu.start();
