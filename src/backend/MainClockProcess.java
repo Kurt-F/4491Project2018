@@ -10,18 +10,11 @@ import java.util.ArrayList;
 
 public class MainClockProcess {
 	
-	/**
-	 * Notes:
-	 * Sleep every minute?
-	 * Uses RPI system time
-	 * @param args
-	 */
-	
-	//Placeholder for variable that will determine if the clock is on
-	static boolean running;
+	static boolean running;	//Placeholder for variable that will determine if the clock is on
+	static boolean debug; //Variable to control whether debug information is sent to the console or not
 
 	public static void main(String[] args) {
-
+    
 		//Display default display
 		Lcd2UsbClient lcd;
 		try {
@@ -53,6 +46,8 @@ public class MainClockProcess {
 		//c.setAlarm(LocalTime.now().plusSeconds(30), LocalDate.now(), true);
 		//c.setAlarm(LocalTime.now().plusSeconds(3), LocalDate.now(), false);
 		// Ideally, there'd be a check to see when the next alarm was and sleep until then or until an input interrupt woke it, but this works
+		//JSON test
+		
 		do {
 			try {
 				Thread.sleep(100);
@@ -69,6 +64,10 @@ public class MainClockProcess {
 			c.tick(instant, today);
 			//Check alarms
 
+			checkInput();
+			//Check alarms etc
+			c.tick(instant, today);
+			
 		} while (running);
 
 
@@ -87,6 +86,5 @@ public class MainClockProcess {
 			}
 		}
 	}
-
 
 }
