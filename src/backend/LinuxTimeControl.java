@@ -2,7 +2,6 @@ package backend;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -34,9 +33,8 @@ public class LinuxTimeControl {
 
         //date command sets time to zero when changing date,
         //so setting the current time when setting the date is required
-        LocalTime currentTime = LocalTime.now();
-        int currentHr = currentTime.getHour();
-        int currentMin = currentTime.getMinute();
+        String currentHr = new SimpleDateFormat("HH").format(new Date());
+        String currentMin = new SimpleDateFormat("mm").format(new Date());
 
         String monthFormat = String.format("%02d", month);
         String dayFormat = String.format("%02d", day);
@@ -54,7 +52,7 @@ public class LinuxTimeControl {
         dateProcess.start();
 
         //Setting time back to current hour and minute
-        setTime(currentHr, currentMin);
+        setTime(Integer.parseInt(currentHr), Integer.parseInt(currentMin));
 
     }
 

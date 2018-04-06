@@ -1,6 +1,9 @@
 package backend;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.Socket;
 
 public class Lcd2UsbClient
@@ -12,8 +15,7 @@ public class Lcd2UsbClient
     public Lcd2UsbClient() throws IOException //localhost:8080 default
     {
         lcdSocket = new Socket("localhost", 8080);
-        socketOut = new PrintWriter(new BufferedWriter(new OutputStreamWriter(lcdSocket.getOutputStream())),true);
-        //socketOut = new PrintWriter(lcdSocket.getOutputStream(), true);
+        socketOut = new PrintWriter(lcdSocket.getOutputStream(), true);
         socketIn = new BufferedReader(new InputStreamReader(lcdSocket.getInputStream()));
     }
 
