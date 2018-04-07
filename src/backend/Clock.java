@@ -24,11 +24,9 @@ import org.json.*;
 public class Clock {
 	//A queue of all alarms.
 	private LinkedList<Alarm> alarms;
-	private final Connection out;
 	private GpioPinDigitalInput controlPanel[];
 	
 	public Clock(GpioPinDigitalInput controlPanel[]){
-		out = new Connection();
 
 		alarms = new LinkedList<Alarm>();
 		this.controlPanel = controlPanel;
