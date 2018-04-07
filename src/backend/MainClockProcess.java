@@ -63,10 +63,6 @@ public class MainClockProcess {
 			//Check to see if an alarm would usually be set 
 			c.tick(instant, today);
 			//Check alarms
-
-			checkInput();
-			//Check alarms etc
-			c.tick(instant, today);
 			
 		} while (running);
 

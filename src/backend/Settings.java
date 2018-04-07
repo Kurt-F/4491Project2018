@@ -176,7 +176,7 @@ public class Settings {
             else if (controlPanel[1].isLow()){//select
                 if (cursorPos == 2){
                     LocalTime alarmTime = LocalTime.of(newHr, newMin);
-                    clock.setAlarm(alarmTime,LocalDate.now(),false);
+                    clock.setAlarm(alarmTime,LocalDate.now(),false, "Atlanta, GA", "Rome, GA"); //STRINGS ARE PLACEHOLDERS!!!
                     active = false;
                 }
                 else if(cursorPos == 3){
@@ -184,7 +184,7 @@ public class Settings {
                     LocalDate alarmDate = LocalDate.now();
                     alarmDate.plusDays(1);
 
-                    clock.setAlarm(alarmTime,alarmDate,false);
+                    clock.setAlarm(alarmTime,alarmDate,false, "Atlanta, GA", "Rome, GA"); //SRINGS ARE PLACEHOLDERS!!!
                     active = false;
                 }
                 else{

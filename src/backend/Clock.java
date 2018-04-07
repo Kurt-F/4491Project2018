@@ -138,7 +138,6 @@ public class Clock {
 	}
 	
 	private Duration getWeatherShift(Alarm a){
-		if(numReqs < 5) {
 		URL url;
 		String APIKey = "82fb18f2447c8171ee812653fb3be5ce"; //TODO: Load from file.
 		String cityname = "Atlanta"; //TODO: Variable city
@@ -179,9 +178,6 @@ public class Clock {
 		} catch (JSONException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}		
-		
-		return null;
 		}
 		return Duration.ZERO.plusSeconds(5);
 	}
