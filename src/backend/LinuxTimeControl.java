@@ -58,4 +58,36 @@ public class LinuxTimeControl {
 
     }
 
+    public static void setTZ(String TZString){
+
+    }
+
+    public static void enableNTP() throws IOException {
+        //systemctl enable systemd-timesyncd.service
+        ArrayList<String> argumentList = new ArrayList<>();
+
+        argumentList.add("sudo"); //requires the NOPASSWD option for /bin/date in sudoer's file
+        argumentList.add("-n");
+        argumentList.add("/bin/systemctl");
+        argumentList.add("enable");
+        argumentList.add("systemd-timesyncd.service");
+
+        ProcessBuilder systemctlProcess = new ProcessBuilder(argumentList);
+        systemctlProcess.start();
+    }
+
+    public static void disableNTP() throws IOException {
+        //systemctl disable systemd-timesyncd.service
+        ArrayList<String> argumentList = new ArrayList<>();
+
+        argumentList.add("sudo"); //requires the NOPASSWD option for /bin/date in sudoer's file
+        argumentList.add("-n");
+        argumentList.add("/bin/systemctl");
+        argumentList.add("disable");
+        argumentList.add("systemd-timesyncd.service");
+
+        ProcessBuilder systemctlProcess = new ProcessBuilder(argumentList);
+        systemctlProcess.start();
+    }
+
 }
