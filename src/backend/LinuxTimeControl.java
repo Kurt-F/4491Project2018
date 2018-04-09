@@ -2,6 +2,7 @@ package backend;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -33,8 +34,9 @@ public class LinuxTimeControl {
 
         //date command sets time to zero when changing date,
         //so setting the current time when setting the date is required
-        String currentHr = new SimpleDateFormat("HH").format(new Date());
-        String currentMin = new SimpleDateFormat("mm").format(new Date());
+        LocalTime currentTime = LocalTime.now();
+        int currentHr = currentTime.getHour();
+        int currentMin = currentTime.getMinute();
 
         String monthFormat = String.format("%02d", month);
         String dayFormat = String.format("%02d", day);
@@ -52,8 +54,40 @@ public class LinuxTimeControl {
         dateProcess.start();
 
         //Setting time back to current hour and minute
-        setTime(Integer.parseInt(currentHr), Integer.parseInt(currentMin));
+        setTime(currentHr, currentMin);
 
+    }
+
+    public static void setTZ(String TZString){
+
+    }
+
+    public static void enableNTP() throws IOException {
+        //systemctl enable systemd-timesyncd.service
+        ArrayList<String> argumentList = new ArrayList<>();
+
+        argumentList.add("sudo"); //requires the NOPASSWD option for /bin/date in sudoer's file
+        argumentList.add("-n");
+        argumentList.add("/bin/systemctl");
+        argumentList.add("enable");
+        argumentList.add("systemd-timesyncd.service");
+
+        ProcessBuilder systemctlProcess = new ProcessBuilder(argumentList);
+        systemctlProcess.start();
+    }
+
+    public static void disableNTP() throws IOException {
+        //systemctl disable systemd-timesyncd.service
+        ArrayList<String> argumentList = new ArrayList<>();
+
+        argumentList.add("sudo"); //requires the NOPASSWD option for /bin/date in sudoer's file
+        argumentList.add("-n");
+        argumentList.add("/bin/systemctl");
+        argumentList.add("disable");
+        argumentList.add("systemd-timesyncd.service");
+
+        ProcessBuilder systemctlProcess = new ProcessBuilder(argumentList);
+        systemctlProcess.start();
     }
 
 }
