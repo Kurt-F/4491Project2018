@@ -38,13 +38,37 @@ public class Clock {
 	public void tick(LocalTime t, LocalDate d){
 		//Change the time based on current weather/traffic conditions
 		//Only the "Soonest" alarm is checked for traffic conditions.
-		Duration traffic = getTrafficShift(alarms.peek());
+		//Duration traffic = getTrafficShift(alarms.peek());
 		Duration weather = getWeatherShift(alarms.peek());
-		
+		/*
+		*
+		*
+		*
+		*
+		*
+		*
+		*
+		*
+		*
+		*
+		* Temporary comment!
+		*
+		*
+		*
+		*
+		*
+		*
+		*
+		*
+		*
+		*
+		*
+		*
+		 */
 		//If there are no alarms set to go off today, don't bother checking. 
 		if(alarms.peek() != null){
-		if(traffic != null)
-			t = t.plus(traffic);
+		//if(traffic != null)
+			//t = t.plus(traffic);
 	
 		t = t.plus(weather);
 

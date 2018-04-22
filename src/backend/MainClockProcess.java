@@ -29,6 +29,11 @@ public class MainClockProcess {
 		lcd.setText(3," ");
 
 		//Create GPIO controller and buttons
+		/*
+		 * This creates an array containing the buttons on the physical control panel.
+		 * Currently it must be passed though to any object that requires input.
+		 * Object "lcd" above must be treated in a similar manner at this time.
+		 */
 		final GpioController gpio = GpioFactory.getInstance();
 		//Buttons physically connect their GPIO pin to ground when pressed, so pull-up resistor is used here.
 		GpioPinDigitalInput menuButton = gpio.provisionDigitalInputPin(RaspiPin.GPIO_01,
