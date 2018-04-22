@@ -1,100 +1,134 @@
 package backend;
 
-import com.pi4j.io.gpio.GpioPinDigitalInput;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
+import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.Collections;
 import java.util.LinkedList;
 import org.json.*;
 
+
 /**
+ *  @author Kurt Floyd
+ * This is the trimmed down version of the class I used to implement the API 
+ * code, when merged with master it should ONLY insert the getShift and 
+ * getProfile methods, and the previous getWeather and getAlarm methods should 
+ * be deleted. 
  * 
- * @author Kurt Floyd
- *
  */
 public class Clock {
-	//A queue of all alarms.
+	//A unique identifier for this particular clock. Randomized in production.
+	private static final int clockID = 0;
+	//Debug flag
+	private static final boolean DEBUG = true;
+	// The cloud server name
+	//private static final String HOSTNAME = "http://www.smart-clock.xyz.com";
+	// Temporary hostname for the development server
+	private static final String HOSTNAME = "http://192.168.1.69";
+	//An array of Lists of alarms
 	private LinkedList<Alarm> alarms;
-	private final Connection out;
-	private GpioPinDigitalInput controlPanel[];
+	// The current time shift
+	private Duration timeshift;
 	
-	public Clock(GpioPinDigitalInput controlPanel[]){
-		out = new Connection();
-
+	
+	public Clock(){
 		alarms = new LinkedList<Alarm>();
-		this.controlPanel = controlPanel;
+		timeshift = Duration.ZERO;
 	}
 	
 	/**
 	 * Checks the given date and time to see if an alarm time has been reached. Only the soonest alarm is checked.
 	 */
-	public void tick(LocalTime t, LocalDate d){
-		//Change the time based on current weather/traffic conditions
-		//Only the "Soonest" alarm is checked for traffic conditions.
-		Duration traffic = getTrafficShift(alarms.peek());
-		Duration weather = getWeatherShift(alarms.peek());
-		
-		//If there are no alarms set to go off today, don't bother checking. 
-		if(alarms.peek() != null){
-		if(traffic != null)
-			t = t.plus(traffic);
-	
-		t = t.plus(weather);
-
-		
+	public void tick(LocalTime t, LocalDate d, boolean s){
+		Alarm a = alarms.element();
+		int day = getDayCode(d);
+		if(s) {
+			timeshift = getShift(a);
+		}
+		//Get the current day 
+		if(a != null){
+		//Add the time shift
+		t = t.plus(timeshift);
 		//If the shifted time either passed by or is at the soonest alarm time(s), trip it/them.
-		while(!alarms.isEmpty() && alarms.getFirst().getTime().compareTo(t) <= 0 && alarms.getFirst().getDay().equals(d)){
+		while(!alarms.isEmpty() && a.getTime().compareTo(t) <= 0 && a.days[day]){
+			if(a.Repeat){
+				if(a.AutoAdvance)
+					this.setAlarm(a.getTime(), a.isRepeat(), a.primarykey, a.days);
+				else
+					this.setAlarm(
+							a.getTime(), 
+							a.isRepeat(), 
+							a.primarykey, 
+							a.days,
+							a.getOrigin(), 
+							a.getDestination());
+				}
 			Alarm alarm = alarms.removeFirst();
 			this.tripAlarm(alarm);
 			System.out.println(alarms.size());
-			//If the alarm is set to repeat, re-add it but set for tomorrow. 
-			if(alarm.doesRepeat()){
-				this.setAlarm(alarm.getTime(), alarm.getDay().plusDays(1), true, alarm.getStart(), alarm.getEnd());
-				System.out.println("Alarm re-added");
-				}
+			//If the alarm is set to repeat, handle that
 			}
 		}
 	}
 	
+
+	
 	/**
-	 * Set alarm with the default tone
-	 * @param t the time and date the alarm should go off
-	 * @param d the date the alarm is set for
-	 * @param r whether the alarm repeats or not
-	 * @param h Home address
-	 * @param e Destination address
+	 * Set alarm
+	 * NOTE: No way to add alarms with origin/destination from
+	 * inside the clock class unless they are pulled from server
 	 * 
 	 */
-	public void setAlarm(LocalTime t, LocalDate d, boolean r, String h, String e) {
-		Alarm a = new Alarm(t, d, r, h, e);
+	public void setAlarm(LocalTime t, boolean r, Integer k, boolean[] days) {
+		Alarm a = new Alarm(t, r, k, days);
 		alarms.add(a);
+		this.sync();
 		//Sort the alarms
-		Collections.sort(alarms);
+		for(int i = 0; i < alarms.size(); i++) 
+			Collections.sort(alarms);
 	}
 	
-	/** 
-	 * Set alarm with a custom tone
-	 * @param t the time and date the alarm should go off
-	 * @param s placeholder variable for setting a different alarm tone
-	 * @param d the date the alarm is set for
-	 * @param r whether the alarm repeats or not
-	 * @param h Home address
-	 * @param e Destination address
-	 * 
+	/**
+	 * Set an autoadvance alarm
+	 * @param t
+	 * @param r
+	 * @param k
+	 * @param days
+	 * @param o
+	 * @param d
 	 */
-	public void setAlarm(LocalTime t, LocalDate d, boolean r, int s, String h, String e) {
-		Alarm a = new Alarm(t, d, r, h, e);
-		alarms.add(a);
-		Collections.sort(alarms);
+	public void setAlarm(LocalTime t, boolean r, Integer k, boolean[] days, String o, String d) {
+		Alarm a = new Alarm(t, r, k, days, o, d);
+		for(int i = 0; i < days.length; i++) {
+			if(days[i]) {
+				alarms.add(a);
+			}
+		}
+		this.sync();
+		//Sort the alarms
+		for(int i = 0; i < alarms.size(); i++) 
+			Collections.sort(alarms);
+	}
+	
+	/**
+	 * Set alarm from JSON
+	 * TODO: Finish this
+	 * @param j JSON encoded alarm
+	 */
+	public void setAlarm(JSONObject j) {
+		
 	}
 	
 	/**
@@ -111,62 +145,118 @@ public class Clock {
 				i--;
 			}
 		}
+		this.sync();
 	}
-	
-
 	
 	private void tripAlarm(Alarm a){
 		//Code to actually make alarm sound etc goes here
 		//Placeholder to show that an alarm has been tripped
-		AlarmPlayer.loopAlarm(controlPanel);
 		System.out.println("Alarm set for " + a.getTime().toString() + " has been tripped!");
+	}
+		
+	/**
+	 * Fetch the alarms from the cloud
+	 */
+	private void getAlarms() {
+		try {
+			// Use <host>/alarms/get/<clockid> to make GET request
+			String url = HOSTNAME + "alarms/get/" + clockID;
+			if(DEBUG)
+				print("url");
+			BufferedReader read = getReader(url, "GET");
+			String result = "";
+			//Read all lines
+			while(read.ready()) {
+				result += read.readLine();
+			}
+			//Attempt to parse as JSON
+			JSONArray newAlarms = new JSONObject(result).getJSONArray("alarms");
+			//Load each Alarm into queue 
+			for(Object j : newAlarms) {
+				this.setAlarm((JSONObject) j);
+			}
+		}
+		catch(JSONException e) {
+			e.printStackTrace();
+			return;
+		}
+		catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	/**
-	 * Uses the google API to find the additional time needed to 
-	 * TODO: Finish this and the other getxxxxShift method
-	 * @return
+	 * Synchronises the alarm list with that of the server
 	 */
-	private Duration getTrafficShift(Alarm a){
-		String APIKey = "";
+	private void sync() {
+		try {
+			String url = HOSTNAME + "/alarms/set/" + clockID;
+			BufferedReader reader = getReader(url, "PUT");
+			
+			// Encode list of alarms into JSONObject
+			// Make POST request using <host>/alarms/synch/<clockID>, send alarms
+		}
+		catch(JSONException e) {
+			//This should never happen
+			e.printStackTrace();
+			return;
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
+			return;
+		} catch (ProtocolException e) {
+			e.printStackTrace();
+			return;
+		} catch (IOException e) {
+			e.printStackTrace();
+			return;
+		}
 		
-		//Get the endpoints of the route associated with this alarm
-		String start = a.getStart();
-		String end = a.getEnd();
-		
-		return null;
 	}
 	
-	private Duration getWeatherShift(Alarm a){
-		if(numReqs < 5) {
+	/**
+	 * Uses the APIs to find the additional time needed for an alarm
+	 * TODO: Finish this and the user data method
+	 * @return
+	 */	
+	private static Duration getShift(Alarm a){
+		//Base duration
+		Duration d = Duration.ZERO;
+		//If the alarm does not auto advance, return zero seconds
+		if(a.AutoAdvance)
+			return d;
 		URL url;
-		String APIKey = "82fb18f2447c8171ee812653fb3be5ce"; //TODO: Load from file.
-		String cityname = "Atlanta"; //TODO: Variable city
-		String rootURL = "http://api.openweathermap.org/data/2.5/weather?q=";
+		//In production only one APIkey per API, can be defined here
+		String weatherAPIKey = "82fb18f2447c8171ee812653fb3be5ce"; 
+		String googleAPIKey = "";
+		String home = a.getOrigin();
+		String destination = a.getDestination();
+		String rootWURL = "http://api.openweathermap.org/data/2.5/weather?q=";
+		String rootGURL = "https://maps.googleapis.com/maps/api/distancematrix/json?origins=";
 		try {
-			url = new URL(rootURL + cityname + "&appid=" + APIKey);
-			HttpURLConnection con = (HttpURLConnection) url.openConnection();
-			con.setRequestMethod("GET");
-			//Test code to read http connection
-			InputStream in = con.getInputStream();
-			BufferedReader read = new BufferedReader(new InputStreamReader(in));
-			StringBuilder result = new StringBuilder();
-			String line;
-			while((line = read.readLine()) != null) {
-			    result.append(line);
-			}
-			//Convert to JSON
-			JSONObject wdata = new JSONObject(result.toString());
-			//TODO: More sophisticated time adding algorithm
-			//String main = wdata.get("weather");
-			String data = wdata.get("weather").toString();
-			data = data.substring(1, data.length() - 1);
-			JSONObject j = new JSONObject(data);
-			String main = j.getString("main");
-			if(main.equals("Clear"))
-				return Duration.ZERO.minusMinutes(5);
-			else
-				return Duration.ZERO.plusMinutes(10);
+			/* --- Make OpenWeather request --- */
+			// TODO: A lot. Finish getShift method
+			// Parse address and extract zipcode
+			String origin = a.getOrigin();
+			String zipcode = origin.substring(origin.length() - 6, origin.length());
+			// Make request to weather API 
+			String rawurl = rootWURL += zipcode;
+			BufferedReader read = getReader(rawurl, "GET");
+			// Parse response, add time
+			// Determine google parameters
+			/* --- Make Google request --- */
+			// Replace address spaces with plusses
+			home.replaceAll(" ", "+");
+			destination.replaceAll(" ", "+");
+			// Make request to Google API
+			rawurl = rootGURL += home + "&destinations=" + destination;		
+			rawurl += "&departure_time=" + Long.toString(System.currentTimeMillis()); 
+			rawurl += "&traffic_model=" + ""; //TODO: Change model based on weather
+			rawurl += "&key=" + googleAPIKey;
+			read = getReader(rawurl, "GET");
+			
+			// Parse response, add time
+			
 		} catch (MalformedURLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -179,70 +269,42 @@ public class Clock {
 		} catch (JSONException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}		
-		
-		return null;
 		}
-		return Duration.ZERO.plusSeconds(5);
+		return d;
 	}
-		
 	
-	/**
-	 * 
-	 * @author Kurt Floyd
-	 * Uses the comparable interface to sort based on time. 
-	 *
-	 */
-	private class Alarm implements Comparable<Alarm> {
-		private final LocalTime time; //The time the alarm goes off
-		private final boolean repeat; //Whether the alarm repeats
-		private final LocalDate day; //The date the alarm is supposed to trigger
-		private final String start; //The start location of the route associated with each alarm
-		private final String end; //The end location of the route assocaited with each alarm
-		//Private final int tone; Dummy variable, different tones to be implemented
-		
-		//Constructor
-		Alarm(LocalTime t, LocalDate d, boolean r, String s, String e){
-			time = t;
-			repeat = r;
-			day = d;
-			start = s;
-			end = e;
-		}
-				
-		public String getEnd() {
-			return end;
-		}
-
-		public String getStart() {
-			return start;
-		}
-
-		public int getTone() {
-			return 0; //Does nothing, to be implemented
-		}
-
-		public boolean doesRepeat() {
-			return repeat;
-		}
-		
-		public LocalTime getTime() {
-			return this.time;
-		}
-		
-		public LocalDate getDay(){
-			return this.day;
-		}
-
-		@Override
-		public int compareTo(Alarm o) {
-			int dateDif = this.getDay().compareTo(o.getDay());
-			if(dateDif == 0)
-				return this.getTime().compareTo(o.getTime());
-			else 
-				return dateDif;
-		}
-		
+	
+	private static BufferedReader getReader(String url, String m) throws IOException {
+		URL u = new URL(url);
+		HttpURLConnection con = (HttpURLConnection) u.openConnection();
+		con.setRequestMethod(m);
+		//Put the request data into a BufferedReader
+		BufferedReader read = 
+				new BufferedReader(
+						new InputStreamReader(con.getInputStream()));
+		return read;	
+	}
+	
+	private static BufferedWriter getWriter(String url, String m) throws IOException{
+		URL u = new URL(url);
+		HttpURLConnection con = (HttpURLConnection) u.openConnection();
+		con.setRequestMethod(m);
+		//Get the writer
+		BufferedWriter write = 
+				new BufferedWriter(
+						new OutputStreamWriter(
+								con.getOutputStream()));
+		return write;
+	}
+	
+	//Get day of week shifted to 0-6
+	private static int getDayCode(LocalDate d) {
+		return d.getDayOfWeek().getValue() - 1;
+	}
+	
+	//Helper to make printing easier
+	private static void print(String s) {
+		System.out.println(s);
 	}
 
 }
