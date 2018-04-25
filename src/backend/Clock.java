@@ -290,49 +290,81 @@ public class Clock {
 		Duration d = Duration.ZERO;
 		//If the alarm does not auto advance, return zero seconds
 		//getShift is off for now
-		if(!a.AutoAdvance && false )
+		if(!a.AutoAdvance)
 			return d;
 		URL url;
 		//In production only one APIkey per API, can be defined here
-		String weatherAPIKey = "82fb18f2447c8171ee812653asfb3be5ce"; 
-		String googleAPIKey = "";
+		String weatherAPIKey = "82fb18f2447c8171ee812653fb3be5ce"; 
+		String googleAPIKey = "AIzaSyC9AjnyGBzJevIwzwof50tVznn7gt-4sHk";
+		//The units to be returned
+		String units = "imperial";
+		// Whether to make a pessimistic Google Maps request or not
+		boolean pessimism = false;
 		String home = a.getOrigin();
 		String destination = a.getDestination();
-		String rootWURL = "http://api.openweathermap.org/data/2.5/weather?q=";
+		String rootWURL = "http://api.openweathermap.org/data/2.5/weather?";
 		String rootGURL = "https://maps.googleapis.com/maps/api/distancematrix/json?origins=";
 		try {
 			/* --- Make OpenWeather request --- */
 			// TODO: A lot. Finish getShift method
 			// Parse address and extract zipcode
 			String origin = a.getOrigin();
-			String zipcode = origin.substring(origin.length() - 6, origin.length());
+			String zipcode = origin.substring(origin.length() - 5, origin.length());
+			if(DEBUG)
+				print(zipcode);
 			try{
 			Integer.parseInt(zipcode);
 			}
 			catch(NumberFormatException e){
 				if(DEBUG)
-					print("Invalid ZIPcode in origin address for alarm " + a.label);
+					print("Invalid Zipcode in origin address for alarm " + a.label);
 				return Duration.ZERO;
 			}
-			
+			// If the zipcode can be parsed, add it to the URL
+			String rawurl = rootWURL + "zip=" + zipcode;
+			// Add the API key
+			rawurl += "&APPID=" + weatherAPIKey;
+			// Add the units parameter
+			rawurl += "&units=" + units;
 			// Make request to weather API 
-			String rawurl = rootWURL += zipcode;
 			BufferedReader read = getReader(rawurl, "GET");
-			// Parse response, add time
-			// Determine google parameters
+			//Get all data
+			String data = getData(read);
+			print(data);
+			// Get initial response
+			JSONObject response = new JSONObject(data);
+			// Get the weather data field
+			JSONArray array = response.getJSONArray("weather");
+			JSONObject weather = array.getJSONObject(0);
+			// If the weather is anything other than "clear," make google use a pessimistic estimate
+			if(!weather.get("main").toString().equals("Clear"))
+				pessimism = true;
+			// TODO: Add more advanced weather data interpretation and duration extension
 			/* --- Make Google request --- */
 			// Replace address spaces with plusses
-			home.replaceAll(" ", "+");
-			destination.replaceAll(" ", "+");
+			home = home.replaceAll(" ", "+");
+			destination = destination.replaceAll(" ", "+");
 			// Make request to Google API
 			rawurl = rootGURL += home + "&destinations=" + destination;		
 			rawurl += "&departure_time=" + Long.toString(System.currentTimeMillis()); 
-			rawurl += "&traffic_model=" + ""; //TODO: Change model based on weather
+			if(pessimism)
+				rawurl += "&traffic_model=pessimistic"; 
+			rawurl += "&units=" + units;
 			rawurl += "&key=" + googleAPIKey;
 			read = getReader(rawurl, "GET");
-			
-			// Parse response, add time
-			
+			// Parse into JSON
+			JSONObject result = new JSONObject(getData(read));
+			JSONArray rows = result.getJSONArray("rows");
+			JSONObject first = rows.getJSONObject(0);
+			JSONArray element = first.getJSONArray("elements");
+			JSONObject finaldata = element.getJSONObject(0);
+			JSONObject base = finaldata.getJSONObject("duration");
+			JSONObject traffic = finaldata.getJSONObject("duration_in_traffic");
+			// Get the base time, the time with traffic, and find the difference
+			Duration baseTime = Duration.ZERO.plusSeconds(base.getLong("value"));
+			Duration trafficTime = Duration.ZERO.plusSeconds(traffic.getLong("value"));
+			Duration delta = trafficTime.minus(baseTime);
+			d = d.plus(delta);	
 		} catch (MalformedURLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

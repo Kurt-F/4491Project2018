@@ -4,8 +4,8 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 
 public class TestMain {
-private static final long SYNC_TIME = 10000;
-private static final long API_TIME = 300000;
+private static final long SYNC_TIME = 30000;
+private static final long API_TIME = 60000;
 private static final long ERROR = 500;
 
 	public static void main(String[] args) throws InterruptedException {
@@ -15,7 +15,6 @@ private static final long ERROR = 500;
 		clock.setAlarm(LocalTime.now().plusSeconds(7), null, days);
 		clock.setAlarm(LocalTime.now().plusSeconds(8), null, days);
 		clock.setAlarm(LocalTime.now().plusSeconds(2), null, days);
-		clock.setAlarm(LocalTime.now().plusSeconds(50), null, days);
 
 		// Check alarms every second. 
 		long total = 0;
