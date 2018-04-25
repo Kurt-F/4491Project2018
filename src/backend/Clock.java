@@ -17,6 +17,9 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.Collections;
 import java.util.LinkedList;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
+
 import org.json.*;
 
 
@@ -29,6 +32,9 @@ import org.json.*;
  * 
  */
 public class Clock {
+	//Variables used for keeping track of alarms
+	DayOfWeek clockday;
+	LinkedList<Integer> alarmsTripped;
 	//A unique identifier for this particular clock. Randomized in production.
 	private static final int clockID = 0;
 	//Debug flag
@@ -36,16 +42,21 @@ public class Clock {
 	// The cloud server name
 	//private static final String HOSTNAME = "http://www.smart-clock.xyz.com";
 	// Temporary hostname for the development server
-	private static final String HOSTNAME = "http://192.168.1.69";
+	private static final String HOSTNAME = "http://192.168.1.69:8123";
 	//An array of Lists of alarms
 	private LinkedList<Alarm> alarms;
 	// The current time shift
 	private Duration timeshift;
+	// The primary keys of the alarms fetched from the server
+	private LinkedList<Integer> keys;
 	
 	
 	public Clock(){
+		alarmsTripped = new LinkedList<Integer>();
+		clockday = LocalDate.now().getDayOfWeek();
 		alarms = new LinkedList<Alarm>();
 		timeshift = Duration.ZERO;
+		keys = new LinkedList<Integer>();
 	}
 	
 	/**
@@ -54,52 +65,73 @@ public class Clock {
 	public void tick(LocalTime t, LocalDate d, boolean s){
 		if(alarms.isEmpty())
 			return;
+		//print("All alarms added so far: " + showAlarms());
 		Alarm a = alarms.element();
+		print("Alarm a: " + a.toString());
 		int day = getDayCode(d);
-		if(s) {
+		//Only gets the shift for the soonest alarm, should be fine in most cases but would have to work better in production
+		if(s && !alarms.isEmpty() && a.AutoAdvance) {
 			timeshift = getShift(a);
 		}
-		//Get the current day 
 		if(a != null){
-		//Add the time shift
-		t = t.plus(timeshift);
-		//If the shifted time either passed by or is at the soonest alarm time(s), trip it/them.
-		while(!alarms.isEmpty() && a.getTime().compareTo(t) <= 0 && a.days[day]){
-			if(a.Repeat){
-				if(a.AutoAdvance)
-					this.setAlarm(a.getTime(), a.isRepeat(), a.primarykey, a.days);
-				else
-					this.setAlarm(
-							a.getTime(), 
-							a.isRepeat(), 
-							a.primarykey, 
-							a.days,
-							a.getOrigin(), 
-							a.getDestination());
+			//Add the time shift
+			t = t.plus(timeshift);
+			print("# alarms set: " + alarms.size());
+			print("Time comparison: " + a.getTime().compareTo(t));
+			// Ensure there is at least one alarm
+			if(!alarms.isEmpty()){
+				// New loop: Iterate through and get all matching alarms, put them in a separate queue
+				LinkedList<Alarm> alarmsToTrip = new LinkedList<Alarm>();
+				int index = alarms.indexOf(alarms.element());
+				print("# alarms set: " + alarms.size());
+				// While the time and day are valid
+				while(index < alarms.size() && alarms.get(index).getTime().compareTo(t) <= 0){
+					print("# alarms set: " + alarms.size());
+					System.out.print("Index"+index);
+					// If it repeats and we aren't on the correct day then don't trip
+					if((alarms.get(index).Repeat && !alarms.get(index).days[day])){
+						print("WRONG DAY. Today is: " + day);
+						//do nothing
+					}
+					// Otherwise, trip
+					else{
+						print("adding alarm to triplist, " + alarmsToTrip.size() + " total alarms added so far.");
+						alarmsToTrip.add(alarms.get(index));
+					}
+					index++;
 				}
-			Alarm alarm = alarms.removeFirst();
-			this.tripAlarm(alarm);
-			System.out.println(alarms.size());
-			//If the alarm is set to repeat, handle that
+				// After new queue is full, trip each and re-add if neccessary 
+				for(Alarm alarm : alarmsToTrip){
+					print("# alarms set: " + alarms.size());
+					print("Tripping alarm " + alarm.label);
+					alarms.removeIf(sameAlarm(alarm));
+					tripAlarm(alarm);
+					if(alarm.Repeat){
+						this.setAlarm(alarm);
+					}
+				}
+				print("# alarms set: " + alarms.size());
+
+			}
+		else {
+			print("Null alarm somehow");
+			System.exit(1);
 			}
 		}
 	}
 	
 
-	
 	/**
 	 * Set alarm
 	 * NOTE: No way to add alarms with origin/destination from
 	 * inside the clock class unless they are pulled from server
 	 * 
 	 */
-	public void setAlarm(LocalTime t, boolean r, Integer k, boolean[] days) {
-		Alarm a = new Alarm(t, r, k, days);
+	public void setAlarm(LocalTime t, Integer k, boolean[] days) {
+		Alarm a = new Alarm(t, k, days);
 		alarms.add(a);
-		this.sync();
 		//Sort the alarms
-		for(int i = 0; i < alarms.size(); i++) 
-			Collections.sort(alarms);
+		Collections.sort(alarms);
 	}
 	
 	/**
@@ -108,20 +140,19 @@ public class Clock {
 	 * @param r
 	 * @param k
 	 * @param days
-	 * @param o
-	 * @param d
+	 * @param o Origin Address 
+	 * @param d Destination address
+	 * @param s The label of the string
 	 */
-	public void setAlarm(LocalTime t, boolean r, Integer k, boolean[] days, String o, String d) {
-		Alarm a = new Alarm(t, r, k, days, o, d);
+	public void setAlarm(LocalTime t, Integer k, boolean[] days, String o, String d, String s) {
+		Alarm a = new Alarm(t, k, days, o, d, s);
 		for(int i = 0; i < days.length; i++) {
 			if(days[i]) {
 				alarms.add(a);
 			}
 		}
-		this.sync();
 		//Sort the alarms
-		for(int i = 0; i < alarms.size(); i++) 
-			Collections.sort(alarms);
+		Collections.sort(alarms);
 	}
 	
 	/**
@@ -129,42 +160,97 @@ public class Clock {
 	 * TODO: Finish this
 	 * @param j JSON encoded alarm
 	 */
-	public void setAlarm(JSONObject j) {
-		
+	public void setAlarm(JSONObject j, int p) {
+		alarms.add(Alarm.fromJSON(j, p));
+		Collections.sort(alarms);
+	}
+	
+	
+	/**
+	 * Set an alarm that already exists
+	 * @param a
+	 */
+	public void setAlarm(Alarm a){
+		alarms.add(a);
+		Collections.sort(alarms);
 	}
 	
 	/**
-	 * Remove an alarm from the alarm list
-	 * @param t All alarms that go off at this time will be removed
-	 * TODO: Add day checking too
-	 * TODO: Implement more efficient search
+	 * Unset alarm with the primary key k
+	 * 
+	 * Because repeating alarms can only come from the server, they will always have 
+	 * a primary key, which makes removing alarms with null keys pointless as
+	 * they will be removed automatically. This may change when alarms sync upstream
+	 * to the server. 
+	 * @param k Key of the alarm to be deleted
 	 */
-	public void unSetAlarm(LocalTime t) {
-		for(int i = 0; i < alarms.size();i++){
-			if(alarms.get(i).getTime().equals(t)){
-				alarms.remove(alarms.get(i));
-				//Decrement as the new ith alarm has not been checked
-				i--;
+	public void unSetAlarm(int k){
+		for(Alarm a : alarms){
+			// Assume you never get a local alarm
+			if(a.primarykey != null && a.primarykey == k){
+				alarms.remove(a);
+				keys.removeIf(sameKey(k));
 			}
 		}
-		this.sync();
+		Collections.sort(alarms);
 	}
 	
 	/**
 	 * Synchronises the alarm list with that of the server
 	 */
 	public void sync() {
+		if(DEBUG)
+			print("in Sync()");
 		try {
-			String url = HOSTNAME + "/alarms/set/" + clockID;
+			//Get all alarms
+			String url = HOSTNAME + "/alarms/get/" + clockID;
 			if(DEBUG)
 				print(url);
-			BufferedReader reader = getReader(url, "PUT");
-			
-			// Encode list of alarms into JSONObject
-			// Make POST request using <host>/alarms/synch/<clockID>, send alarms
+			BufferedReader reader = getReader(url, "GET");
+			String data = getData(reader);
+			// Fix data
+			data = data.substring(1, data.length() - 1);
+			data = data.replaceAll("\\\\", "");
+			JSONArray array = new JSONArray(data);
+			LinkedList<Integer> checked = new LinkedList<Integer>();
+			// For each alarm in the array, add it to the queue
+			if(DEBUG)
+				print("Array length in sync(): " + array.length());
+			for(int i = 0; i < array.length(); i++){
+				// Call Alarm.getFromJSON with ("fields") and ("pk")
+				JSONObject base = new JSONObject(array.get(i).toString());
+				// Get the primary key
+				Integer pk = base.getInt("pk");
+				checked.add(new Integer(pk));
+				// Don't add alarms more than once
+				if(keys.contains(pk)){
+					if(DEBUG)
+						print("Redundant alarm");
+					continue;
+				}
+				else {
+					if(DEBUG)
+						print("Adding alarm from server");
+					//Add the alarm to the keys list
+					keys.add(pk);
+					// Get the alarm fields 
+					JSONObject fields = new JSONObject(base.get("fields").toString());
+					if(DEBUG)
+						print("Fields of alarm pulled from server: " + fields);
+					this.setAlarm(fields, pk);
+				}
+				// Search the keys for any unset alarms
+				for(Integer k : keys){
+					if(!checked.contains(k)){
+						if(DEBUG)
+							print("Removing dead alarm");
+						unSetAlarm(k);
+					}						
+				}
+			}
+			// TODO: Make POST request using <host>/alarms/sync/<clockID>, send alarms
 		}
 		catch(JSONException e) {
-			//This should never happen
 			e.printStackTrace();
 			return;
 		} catch (MalformedURLException e) {
@@ -180,42 +266,16 @@ public class Clock {
 		
 	}
 	
+
 	private void tripAlarm(Alarm a){
 		//Code to actually make alarm sound etc goes here
 		//Placeholder to show that an alarm has been tripped
 		System.out.println("Alarm set for " + a.getTime().toString() + " has been tripped!");
 	}
-		
-	/**
-	 * Fetch the alarms from the cloud
-	 */
-	private void getAlarms() {
-		try {
-			// Use <host>/alarms/get/<clockid> to make GET request
-			String url = HOSTNAME + "alarms/get/" + clockID;
-			if(DEBUG)
-				print("url");
-			BufferedReader read = getReader(url, "GET");
-			String result = "";
-			//Read all lines
-			while(read.ready()) {
-				result += read.readLine();
-			}
-			//Attempt to parse as JSON
-			JSONArray newAlarms = new JSONObject(result).getJSONArray("alarms");
-			//Load each Alarm into queue 
-			for(Object j : newAlarms) {
-				this.setAlarm((JSONObject) j);
-			}
-		}
-		catch(JSONException e) {
-			e.printStackTrace();
-			return;
-		}
-		catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+				
+	
+	private boolean wasTripped(Alarm a) {
+		return alarmsTripped.contains(a.primarykey);
 	}
 	
 	/**
@@ -224,14 +284,17 @@ public class Clock {
 	 * @return
 	 */	
 	private static Duration getShift(Alarm a){
+		if(DEBUG)
+			print("In getShift");
 		//Base duration
 		Duration d = Duration.ZERO;
 		//If the alarm does not auto advance, return zero seconds
-		if(a.AutoAdvance)
+		//getShift is off for now
+		if(!a.AutoAdvance && false )
 			return d;
 		URL url;
 		//In production only one APIkey per API, can be defined here
-		String weatherAPIKey = "82fb18f2447c8171ee812653fb3be5ce"; 
+		String weatherAPIKey = "82fb18f2447c8171ee812653asfb3be5ce"; 
 		String googleAPIKey = "";
 		String home = a.getOrigin();
 		String destination = a.getDestination();
@@ -243,6 +306,15 @@ public class Clock {
 			// Parse address and extract zipcode
 			String origin = a.getOrigin();
 			String zipcode = origin.substring(origin.length() - 6, origin.length());
+			try{
+			Integer.parseInt(zipcode);
+			}
+			catch(NumberFormatException e){
+				if(DEBUG)
+					print("Invalid ZIPcode in origin address for alarm " + a.label);
+				return Duration.ZERO;
+			}
+			
 			// Make request to weather API 
 			String rawurl = rootWURL += zipcode;
 			BufferedReader read = getReader(rawurl, "GET");
@@ -280,6 +352,8 @@ public class Clock {
 	
 	private static BufferedReader getReader(String url, String m) throws IOException {
 		URL u = new URL(url);
+		if(DEBUG)
+			print("Getting a a reader with URL = " + url);
 		HttpURLConnection con = (HttpURLConnection) u.openConnection();
 		con.setRequestMethod(m);
 		//Put the request data into a BufferedReader
@@ -288,6 +362,7 @@ public class Clock {
 						new InputStreamReader(con.getInputStream()));
 		return read;	
 	}
+	
 	
 	private static BufferedWriter getWriter(String url, String m) throws IOException{
 		URL u = new URL(url);
@@ -300,6 +375,15 @@ public class Clock {
 								con.getOutputStream()));
 		return write;
 	}
+	private static String getData(BufferedReader r) throws IOException{
+		StringBuilder s = new StringBuilder();
+		int i;
+		while((i = r.read()) != -1){
+			s.append((char) i);
+		}
+		return s.toString();
+	}
+
 	
 	//Get day of week shifted to 0-6
 	private static int getDayCode(LocalDate d) {
@@ -307,8 +391,25 @@ public class Clock {
 	}
 	
 	//Helper to make printing easier
-	private static void print(String s) {
+	private static void print(Object s) {
 		System.out.println(s);
 	}
-
+	
+	/* Predicates */	
+	private static Predicate<Integer> sameKey(int k){
+		return p -> p.intValue() == k;
+	}
+	private Predicate<Alarm> sameAlarm(Alarm a) {
+		return p -> (p.primarykey == a.primarykey && !(p.primarykey == null) && p.primarykey != null) || Math.abs(p.time.toNanoOfDay() - a.time.toNanoOfDay()) <= 500;
+	}
+	
+	// Used for debugging only
+	private String showAlarms(){
+		String base = "\n";
+		String sep = "\t----";
+		for(Alarm a : this.alarms){
+			base += a.toString() + "\n";
+		}
+		return base;
+	}
 }

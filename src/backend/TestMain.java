@@ -4,16 +4,37 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 
 public class TestMain {
+private static final long SYNC_TIME = 10000;
+private static final long API_TIME = 300000;
+private static final long ERROR = 500;
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws InterruptedException {
 		Clock clock = new Clock();
-		// Check alarms every second. If ten minutes have passed since we checked the APIs, check them
+		boolean[] days = {false, false, false, false, false ,false, false};
+		clock.setAlarm(LocalTime.now().plusSeconds(5), null, days);
+		clock.setAlarm(LocalTime.now().plusSeconds(7), null, days);
+		clock.setAlarm(LocalTime.now().plusSeconds(8), null, days);
+		clock.setAlarm(LocalTime.now().plusSeconds(2), null, days);
+		clock.setAlarm(LocalTime.now().plusSeconds(50), null, days);
+
+		// Check alarms every second. 
+		long total = 0;
+		long initial = System.currentTimeMillis();
 		while(true){
+			total += System.currentTimeMillis() - initial;
+			Thread.sleep(1000);
 			boolean api = false;
-			if(/*Insert time check here*/false)
+			//If 30 seconds have passed, check the server for new alarms
+			if(total >= SYNC_TIME && total % SYNC_TIME < ERROR)
+				clock.sync();
+			//If five minutes have passed since we checked the APIs, check them
+			if(total >= API_TIME && total % API_TIME < ERROR){
+				System.out.println("API Access");
 				api = true;
-			clock.tick(LocalTime.now(), LocalDate.now(), api);
-			
+				total = 0;
+				initial = System.currentTimeMillis();
+			}
+			clock.tick(LocalTime.now(), LocalDate.now(), api);			
 		}
 	}
 
