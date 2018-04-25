@@ -52,6 +52,8 @@ public class Clock {
 	 * Checks the given date and time to see if an alarm time has been reached. Only the soonest alarm is checked.
 	 */
 	public void tick(LocalTime t, LocalDate d, boolean s){
+		if(alarms.isEmpty())
+			return;
 		Alarm a = alarms.element();
 		int day = getDayCode(d);
 		if(s) {
@@ -148,6 +150,36 @@ public class Clock {
 		this.sync();
 	}
 	
+	/**
+	 * Synchronises the alarm list with that of the server
+	 */
+	public void sync() {
+		try {
+			String url = HOSTNAME + "/alarms/set/" + clockID;
+			if(DEBUG)
+				print(url);
+			BufferedReader reader = getReader(url, "PUT");
+			
+			// Encode list of alarms into JSONObject
+			// Make POST request using <host>/alarms/synch/<clockID>, send alarms
+		}
+		catch(JSONException e) {
+			//This should never happen
+			e.printStackTrace();
+			return;
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
+			return;
+		} catch (ProtocolException e) {
+			e.printStackTrace();
+			return;
+		} catch (IOException e) {
+			e.printStackTrace();
+			return;
+		}
+		
+	}
+	
 	private void tripAlarm(Alarm a){
 		//Code to actually make alarm sound etc goes here
 		//Placeholder to show that an alarm has been tripped
@@ -184,34 +216,6 @@ public class Clock {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-	}
-	
-	/**
-	 * Synchronises the alarm list with that of the server
-	 */
-	private void sync() {
-		try {
-			String url = HOSTNAME + "/alarms/set/" + clockID;
-			BufferedReader reader = getReader(url, "PUT");
-			
-			// Encode list of alarms into JSONObject
-			// Make POST request using <host>/alarms/synch/<clockID>, send alarms
-		}
-		catch(JSONException e) {
-			//This should never happen
-			e.printStackTrace();
-			return;
-		} catch (MalformedURLException e) {
-			e.printStackTrace();
-			return;
-		} catch (ProtocolException e) {
-			e.printStackTrace();
-			return;
-		} catch (IOException e) {
-			e.printStackTrace();
-			return;
-		}
-		
 	}
 	
 	/**
