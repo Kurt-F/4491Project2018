@@ -4,41 +4,66 @@ import com.pi4j.io.gpio.GpioPinDigitalInput;
 
 import java.time.LocalTime;
 
+import org.json.*;
+
+
 public class Alarm implements Comparable<Alarm>{
     /*This is a new implementation of Alarm for consideration.
     The main highlight is the repeatDays variable as a different way of dealing with repeating alarms.
+    
+    Changes 4/21/18:
+    	Added label
+    	
+    Changes 4/24/18:
+    	Added to and from JSON methods
+    	Removed "repeat" value in constructor, class now infers repeat status from boolean array
+    	Other things I probably forgot
      */
-    private LocalTime time;
-    private LocalTime alertTime;
-
-    private boolean repeat;
-    private boolean[] repeatDays; //Days of the week the alarm should run. Each day is represented by a boolean with Sunday
-                          //at index 0 and Saturday at index 6. (boolean array of size 7)
-    private boolean autoAdvance;  //Enables or disables early wakeup based on traffic/weather.
-    private String origin;
-    private String destination;
-
-    private boolean randomAudio;
-    private String alarmAudio;
+	final String label;
+    LocalTime time;
+    Integer primarykey; // Used for synchronising with the clock
+    boolean Repeat;
+    boolean[] days;
+    boolean AutoAdvance;  //Enables or disables early wakeup based on traffic/weather.
+    String origin;
+    String destination;
+    boolean randomAudio;
+    String alarmAudio;
 
 
-    public Alarm(LocalTime time, boolean repeat, boolean[] repeatDays) {
+    public Alarm(LocalTime time, Integer k, boolean[] d) {
+    	label = "";
+    	primarykey = k;
         this.time = time;
-        this.repeat = repeat;
-        this.repeatDays = repeatDays;
-        this.autoAdvance = false;
-        this.alertTime = time;
-        randomAudio = true;
+        if(d == null){
+        	d = new boolean[7];
+        }
+        else
+        	days = d;
+        //If the alarm is not set to repeat for any day then it doesn't repeat at all
+        for(boolean b : d)
+        	if(b)
+        		this.Repeat = true;
+        this.AutoAdvance = false;
     }
 
-    public Alarm(LocalTime time, boolean repeat, boolean[] repeatDays, String origin, String destination) {
-        this.time = time;
-        this.repeat = repeat;
-        this.repeatDays = repeatDays;
-        this.autoAdvance = true;
+    public Alarm(LocalTime time, Integer k, boolean[] d, String origin, String destination, String s) {
+    	label = s;
+    	primarykey = k;
+        this.time = time;        
+        if(d == null)
+        	days = new boolean[7];
+        else
+        	days = d;
+
+        //If the alarm is not set to repeat for any day then it doesn't repeat at all
+        for(boolean b : d)
+        	if(b)
+        		this.Repeat = true;
+        this.AutoAdvance = true;
         this.origin = origin;
         this.destination = destination;
-        randomAudio = true;
+
     }
 
     public void tripAlarm(GpioPinDigitalInput[] controlPanel){
@@ -70,14 +95,6 @@ public class Alarm implements Comparable<Alarm>{
 
     public void setRepeat(boolean repeat) {
         this.repeat = repeat;
-    }
-
-    public boolean[] getRepeatDays() {
-        return repeatDays;
-    }
-
-    public void setRepeatDays(boolean[] repeatDays) {
-        this.repeatDays = repeatDays;
     }
 
     public boolean isAutoAdvance() {
@@ -123,5 +140,77 @@ public class Alarm implements Comparable<Alarm>{
     @Override
     public int compareTo(Alarm alarm) {
         return this.getTime().compareTo(alarm.getTime());
+    }
+    
+    //Convert an alarm object to a JSONObject
+    public JSONObject toJSON() {
+    	JSONObject j = new JSONObject();
+    	j.append("time", this.getTime());
+    	j.append("repeat", this.isRepeat());
+    	j.append("pk", primarykey);
+    	//TODO: Create JSONArray of days or something
+    	if(this.AutoAdvance) {
+    		j.append("origin", this.getOrigin());
+    		j.append("destination", this.getDestination());
+    	}
+		return j;
+    }
+    
+    //Create an alarm object from a JSONObject, should only be the fields key + pk
+    public static Alarm fromJSON(JSONObject j, Integer p) {
+    	//Instantiate alarm
+    	Alarm a = null;
+    	String l = j.getString("label");
+   	 	// TODO: Make sure this works with the new 24 hour format 
+    	LocalTime t = LocalTime.parse(j.get("time").toString());
+    	//Get the days
+    	boolean[] days = new boolean[7];
+    	days[0] = j.getBoolean("sunRepeat");
+    	days[1] = j.getBoolean("monRepeat");
+    	days[2] = j.getBoolean("tueRepeat");
+    	days[3] = j.getBoolean("wedRepeat");
+    	days[4] = j.getBoolean("thuRepeat");
+    	days[5] = j.getBoolean("friRepeat");
+    	days[6] = j.getBoolean("satRepeat");
+    	// If the alarm doesn't repeat any days it doesn't repeat at all
+    	boolean r = false;
+    	for(boolean b : days)
+    		if(b)
+    			r = true;
+
+    	// TODO: redo the following with try/catch
+    	//If no further information then skip the options
+    	if(j.length() < 4) {
+    	a = new Alarm(t, p, days);
+    	}
+    	//Else we need the options
+    	else {
+    		String s = j.getString("label");
+    		String o = j.get("origin").toString();
+    		String d = j.get("destination").toString();
+    		a = new Alarm(t, p, days, o, d, s);
+    	}
+		return a;
+    }
+    
+    @Override
+    public String toString(){
+    	String s = "\n";
+    	s += "Alarm Name: " + this.label + "\n";
+    	s += "\tTime: " + this.time.toString() + "\n";
+    	s += "\tRepeat: " + this.Repeat + "\n";
+    	s += "\tPrimary Key: " + this.primarykey + "\n";
+    	s += "\tRepeat days: ";
+	    	for(boolean b : this.days){
+	    		if(b)
+	    			s += "X";
+	    		else
+	    			s+= "0";
+	    	}
+	    s += "\n";
+	    s += "\t Autoadvance: " + this.AutoAdvance + "\n";
+
+    	
+    	return s;
     }
 }
