@@ -14,7 +14,7 @@ public class Settings {
     Clock clock;
     boolean dimScreen;
     int listOffset;
-    final String topLevelEntries[] = {"Set Time", "Set Date", "Set New Alarm", "Toggle Brightness"};
+    final String topLevelEntries[] = {"Set Time", "Set Date", "Set New Alarm", "Toggle Brightness", "Timezone Settings", "Volume Settings"};
     final Runnable topLevelCommands[] = {this::timeSettings,this::dateSettings,
             this::newAlarmSettings, this::toggleBrightness};
     final String cursorString = "-> ";

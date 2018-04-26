@@ -44,6 +44,7 @@ public class MainClockProcess {
 				"Menu", PinPullResistance.PULL_UP);
 		GpioPinDigitalInput upButton = gpio.provisionDigitalInputPin(RaspiPin.GPIO_06,
 				"Menu", PinPullResistance.PULL_UP);
+		
 		//Create ArrayList for buttons to pass for settings menu functions.
 		GpioPinDigitalInput controlPanel[] = {menuButton, selectButton, downButton, upButton};
 

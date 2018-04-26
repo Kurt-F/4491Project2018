@@ -39,7 +39,7 @@ public class Clock {
 		//Change the time based on current weather/traffic conditions
 		//Only the "Soonest" alarm is checked for traffic conditions.
 		//Duration traffic = getTrafficShift(alarms.peek());
-		Duration weather = getWeatherShift(alarms.peek());
+		//Duration weather = getWeatherShift(alarms.peek());
 		/*
 		*
 		*
@@ -67,23 +67,24 @@ public class Clock {
 		 */
 		//If there are no alarms set to go off today, don't bother checking. 
 		if(alarms.peek() != null){
-		//if(traffic != null)
-			//t = t.plus(traffic);
-	
+			// Duration traffic = getTrafficShift(alarms.peek());
+			//if(traffic != null)
+				//t = t.plus(traffic);
+	    Duration weather = getWeatherShift(alarms.peek());
 		t = t.plus(weather);
 
-		
+
 		//If the shifted time either passed by or is at the soonest alarm time(s), trip it/them.
 		while(!alarms.isEmpty() && alarms.getFirst().getTime().compareTo(t) <= 0 && alarms.getFirst().getDay().equals(d)){
 			Alarm alarm = alarms.removeFirst();
 			this.tripAlarm(alarm);
 			System.out.println(alarms.size());
-			//If the alarm is set to repeat, re-add it but set for tomorrow. 
+			//If the alarm is set to repeat, re-add it but set for tomorrow.
 			if(alarm.doesRepeat()){
 				this.setAlarm(alarm.getTime(), alarm.getDay().plusDays(1), true, alarm.getStart(), alarm.getEnd());
 				System.out.println("Alarm re-added");
-				}
 			}
+		}
 		}
 	}
 	
