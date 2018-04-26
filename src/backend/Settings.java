@@ -27,7 +27,9 @@ public class Settings {
     }
 
     public void start() throws InterruptedException, IOException {
-        resumeOnRelease(controlPanel[0]);
+        while(controlPanel[0].isLow()){    //Wait for user to release the button
+            Thread.sleep(50);           //Used for each button press below
+        }
 
         int cursorPos = 0;
         displayMenu(cursorPos, topLevelEntries);
@@ -41,31 +43,43 @@ public class Settings {
                     cursorPos ++;
                 }
                 displayMenu(cursorPos, topLevelEntries);
-                resumeOnRelease(controlPanel[2]);
+                while(controlPanel[2].isLow()){
+                    Thread.sleep(50);
+                }
             }
             else if (controlPanel[3].isLow()){          //up
                 if (cursorPos > 0){
                     cursorPos --;
                 }
                 displayMenu(cursorPos, topLevelEntries);
-                resumeOnRelease(controlPanel[3]);
+                while(controlPanel[3].isLow()){
+                    Thread.sleep(50);
+                }
             }
             else if (controlPanel[1].isLow()){          //select
                 if(cursorPos == 0){
-                    resumeOnRelease(controlPanel[1]);
+                    while(controlPanel[1].isLow()) {
+                        Thread.sleep(50);
+                    }
                     timeSettings();
                 }
                 else if (cursorPos == 1){
-                    resumeOnRelease(controlPanel[1]);
+                    while(controlPanel[1].isLow()) {
+                        Thread.sleep(50);
+                    }
                     dateSettings();
 
                 }
                 else if(cursorPos == 2){
-                    resumeOnRelease(controlPanel[1]);
+                    while(controlPanel[1].isLow()) {
+                        Thread.sleep(50);
+                    }
                     newAlarmSettings();
                 }
                 else if(cursorPos == 3){
-                    resumeOnRelease(controlPanel[1]);
+                    while(controlPanel[1].isLow()) {
+                        Thread.sleep(50);
+                    }
                     if(dimScreen){
                         lcd.setBrightness(200);
                         dimScreen = false;
@@ -80,7 +94,9 @@ public class Settings {
             }
             else if(controlPanel[0].isLow()){           //menu
                 active = false;
-                resumeOnRelease(controlPanel[0]);
+                while(controlPanel[0].isLow()){
+                    Thread.sleep(50);
+                }
             }
 
         }
@@ -130,7 +146,9 @@ public class Settings {
                     }
                 }
 
-                resumeOnRelease(controlPanel[2]);
+                while(controlPanel[2].isLow()){
+                    Thread.sleep(50);
+                }
             }
             else if (controlPanel[3].isLow()){//up
                 if (cursorSelected){
@@ -151,12 +169,14 @@ public class Settings {
                         displayMenu(cursorPos, textEntry, activeEntry);
                     }
                 }
-                resumeOnRelease(controlPanel[3]);
+                while(controlPanel[3].isLow()){
+                    Thread.sleep(50);
+                }
             }
             else if (controlPanel[1].isLow()){//select
                 if (cursorPos == 2){
                     LocalTime alarmTime = LocalTime.of(newHr, newMin);
-                    clock.setAlarm(alarmTime,LocalDate.now(),false, "Atlanta, GA", "Rome, GA"); //STRINGS ARE PLACEHOLDERS!!!
+                    clock.setAlarm(alarmTime,LocalDate.now(),false);
                     active = false;
                 }
                 else if(cursorPos == 3){
@@ -164,14 +184,16 @@ public class Settings {
                     LocalDate alarmDate = LocalDate.now();
                     alarmDate.plusDays(1);
 
-                    clock.setAlarm(alarmTime,alarmDate,false, "Atlanta, GA", "Rome, GA"); //SRINGS ARE PLACEHOLDERS!!!
+                    clock.setAlarm(alarmTime,alarmDate,false);
                     active = false;
                 }
                 else{
                     cursorSelected = true;
                     lcd.setText(cursorPos, selectedCursorString + textEntry[cursorPos]+ activeEntry[cursorPos]);
                 }
-                resumeOnRelease(controlPanel[1]);
+                while(controlPanel[1].isLow()){
+                    Thread.sleep(50);
+                }
 
             }
             else if(controlPanel[0].isLow()){//menu
@@ -182,7 +204,9 @@ public class Settings {
                 else{
                     active = false;
                 }
-                resumeOnRelease(controlPanel[0]);
+                while(controlPanel[0].isLow()){
+                    Thread.sleep(50);
+                }
             }
 
         }
@@ -233,7 +257,9 @@ public class Settings {
                     }
                 }
 
-                resumeOnRelease(controlPanel[2]);
+                while(controlPanel[2].isLow()){
+                    Thread.sleep(50);
+                }
             }
             else if (controlPanel[3].isLow()){//up
                 if (cursorSelected){
@@ -259,7 +285,9 @@ public class Settings {
                         displayMenu(cursorPos, textEntry, activeEntry);
                     }
                 }
-                resumeOnRelease(controlPanel[3]);
+                while(controlPanel[3].isLow()){
+                    Thread.sleep(50);
+                }
             }
             else if (controlPanel[1].isLow()){//select
                 if (cursorPos == 3){
@@ -270,7 +298,9 @@ public class Settings {
                     cursorSelected = true;
                     lcd.setText(cursorPos, selectedCursorString + textEntry[cursorPos]+ activeEntry[cursorPos]);
                 }
-                resumeOnRelease(controlPanel[1]);
+                while(controlPanel[1].isLow()){
+                    Thread.sleep(50);
+                }
 
             }
             else if(controlPanel[0].isLow()){//menu
@@ -281,7 +311,9 @@ public class Settings {
                 else{
                     active = false;
                 }
-                resumeOnRelease(controlPanel[0]);
+                while(controlPanel[0].isLow()){
+                    Thread.sleep(50);
+                }
             }
 
         }
@@ -325,7 +357,9 @@ public class Settings {
                     }
                 }
 
-                resumeOnRelease(controlPanel[2]);
+                while(controlPanel[2].isLow()){
+                    Thread.sleep(50);
+                }
             }
             else if (controlPanel[3].isLow()){//up
                 if (cursorSelected){
@@ -346,7 +380,9 @@ public class Settings {
                         displayMenu(cursorPos, textEntry, activeEntry);
                     }
                 }
-                resumeOnRelease(controlPanel[3]);
+                while(controlPanel[3].isLow()){
+                    Thread.sleep(50);
+                }
             }
             else if (controlPanel[1].isLow()){//select
                 if (cursorPos == 2){
@@ -357,7 +393,9 @@ public class Settings {
                     cursorSelected = true;
                     lcd.setText(cursorPos, selectedCursorString + textEntry[cursorPos]+ activeEntry[cursorPos]);
                 }
-                resumeOnRelease(controlPanel[1]);
+                while(controlPanel[1].isLow()){
+                    Thread.sleep(50);
+                }
 
             }
             else if(controlPanel[0].isLow()){//menu
@@ -368,7 +406,9 @@ public class Settings {
                 else{
                     active = false;
                 }
-                resumeOnRelease(controlPanel[0]);
+                while(controlPanel[0].isLow()){
+                    Thread.sleep(50);
+                }
             }
 
         }
@@ -394,13 +434,6 @@ public class Settings {
                 lcd.setText(i, entries[i] + secondaryEntries[i]);
             }
         }
-    }
-
-    private void resumeOnRelease(GpioPinDigitalInput pressedButton) throws InterruptedException {
-        while(pressedButton.isLow()){
-            Thread.sleep(50);
-        }
-
     }
 
 
