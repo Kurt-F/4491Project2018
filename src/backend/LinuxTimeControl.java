@@ -55,7 +55,6 @@ public class LinuxTimeControl {
 
         //Setting time back to current hour and minute
         setTime(currentHr, currentMin);
-
     }
 
     public static void setNTP(boolean newStatus) throws IOException {
@@ -70,7 +69,6 @@ public class LinuxTimeControl {
         else{
             argumentList.add("stop");
         }
-
         argumentList.add("ntp.service");
 
         ProcessBuilder dateProcess = new ProcessBuilder(argumentList);

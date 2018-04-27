@@ -68,15 +68,12 @@ public class Settings {
                     Thread.sleep(50);
                 }
             }
-
         }
-
         //Return display to default state
         lcd.setText(0, "%I:%M%p");
         lcd.setText(1, " ");
         lcd.setText(2, "%x");
         lcd.setText(3, " ");
-
     }
 
     /*
@@ -127,14 +124,7 @@ public class Settings {
                         displayMenu(cursorPos, textEntry, activeEntry);
                     }
                 }
-
-                while (controlPanel[2].isLow()) {
-                    try {
-                        Thread.sleep(50);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
+                resumeOnRelease(controlPanel[2]);
             } else if (controlPanel[3].isLow()) {//up
                 if (cursorSelected) {
                     if (cursorPos == 0 && newY < LocalDate.MAX.getYear()) {
@@ -157,13 +147,7 @@ public class Settings {
                         displayMenu(cursorPos, textEntry, activeEntry);
                     }
                 }
-                while (controlPanel[3].isLow()) {
-                    try {
-                        Thread.sleep(50);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
+                resumeOnRelease(controlPanel[3]);
             } else if (controlPanel[1].isLow()) {//select
                 if (cursorPos == 3) {
                     try {
@@ -176,14 +160,7 @@ public class Settings {
                     cursorSelected = true;
                     lcd.setText(cursorPos, selectedCursorString + textEntry[cursorPos] + activeEntry[cursorPos]);
                 }
-                while (controlPanel[1].isLow()) {
-                    try {
-                        Thread.sleep(50);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-
+                resumeOnRelease(controlPanel[1]);
             } else if (controlPanel[0].isLow()) {//menu
                 if (cursorSelected) {
                     cursorSelected = false;
@@ -191,15 +168,8 @@ public class Settings {
                 } else {
                     active = false;
                 }
-                while (controlPanel[0].isLow()) {
-                    try {
-                        Thread.sleep(50);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
+                resumeOnRelease(controlPanel[0]);
             }
-
         }
     }
 
@@ -242,14 +212,7 @@ public class Settings {
                         displayMenu(cursorPos, textEntry, activeEntry);
                     }
                 }
-
-                while (controlPanel[2].isLow()) {
-                    try {
-                        Thread.sleep(50);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
+                resumeOnRelease(controlPanel[2]);
             } else if (controlPanel[3].isLow()) {//up
                 if (cursorSelected) {
                     if (cursorPos == 0 && newHr < 23) {
@@ -268,13 +231,7 @@ public class Settings {
                         displayMenu(cursorPos, textEntry, activeEntry);
                     }
                 }
-                while (controlPanel[3].isLow()) {
-                    try {
-                        Thread.sleep(50);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
+                resumeOnRelease(controlPanel[3]);
             } else if (controlPanel[1].isLow()) {//select
                 if (cursorPos == 2) {
                     try {
@@ -287,14 +244,7 @@ public class Settings {
                     cursorSelected = true;
                     lcd.setText(cursorPos, selectedCursorString + textEntry[cursorPos] + activeEntry[cursorPos]);
                 }
-                while (controlPanel[1].isLow()) {
-                    try {
-                        Thread.sleep(50);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-
+                resumeOnRelease(controlPanel[1]);
             } else if (controlPanel[0].isLow()) {//menu
                 if (cursorSelected) {
                     cursorSelected = false;
@@ -302,18 +252,11 @@ public class Settings {
                 } else {
                     active = false;
                 }
-                while (controlPanel[0].isLow()) {
-                    try {
-                        Thread.sleep(50);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
+                resumeOnRelease(controlPanel[0]);
             }
-
         }
     }
-
+   //TODO: redo newAlarmSettings to work with the updated clock and alarm classes (or remove).
    /* private void newAlarmSettings() throws InterruptedException {
         LocalTime currentTime = LocalTime.now();
 
@@ -428,7 +371,6 @@ public class Settings {
         int cursorPos = 0;
         String textEntry[] = {"Turn on time sync", "Turn off time sync", "Set Timezone", " "};
         Boolean active = true;
-
         displayMenu(cursorPos, textEntry);
         while (active) {
             try {
@@ -436,7 +378,6 @@ public class Settings {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-
             if (controlPanel[2].isLow()) {               //down
                 if (cursorPos >= 2) {
                     cursorPos++;
@@ -473,7 +414,6 @@ public class Settings {
             }
         }
     }
-
     /*
      ***Other Functions***
      */
@@ -513,6 +453,7 @@ public class Settings {
                 Thread.sleep(50);
             } catch (InterruptedException e) {
                 e.printStackTrace();
+                return;
             }
         }
 
