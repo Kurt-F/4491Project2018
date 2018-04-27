@@ -20,6 +20,7 @@ import java.util.LinkedList;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import com.pi4j.io.gpio.GpioPinDigitalInput;
 import org.json.*;
 
 
@@ -49,14 +50,17 @@ public class Clock {
 	private Duration timeshift;
 	// The primary keys of the alarms fetched from the server
 	private LinkedList<Integer> keys;
+	// An array of control buttons
+	private GpioPinDigitalInput controlPanel[];
 	
 	
-	public Clock(){
+	public Clock(GpioPinDigitalInput controlPanel[]){
 		alarmsTripped = new LinkedList<Integer>();
 		clockday = LocalDate.now().getDayOfWeek();
 		alarms = new LinkedList<Alarm>();
 		timeshift = Duration.ZERO;
 		keys = new LinkedList<Integer>();
+		this.controlPanel = controlPanel;
 	}
 	
 	/**
@@ -117,7 +121,6 @@ public class Clock {
 			print("Null alarm somehow");
 			System.exit(1);
 			}
-		}
 		}
 	}
 	
@@ -272,6 +275,8 @@ public class Clock {
 		//Code to actually make alarm sound etc goes here
 		//Placeholder to show that an alarm has been tripped
 		System.out.println("Alarm set for " + a.getTime().toString() + " has been tripped!");
+		//Start playback of alarm sound
+		AlarmPlayer.loopAlarm(controlPanel);
 	}
 				
 	

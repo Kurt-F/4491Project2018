@@ -1,7 +1,9 @@
 package backend;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import com.pi4j.io.gpio.*;
 
 public class TestMain {
 private static final long SYNC_TIME = 30000;
@@ -9,7 +11,37 @@ private static final long API_TIME = 60000;
 private static final long ERROR = 500;
 
 	public static void main(String[] args) throws InterruptedException {
-		Clock clock = new Clock();
+
+		//Default Display Settings
+		Lcd2UsbClient lcd;
+		try {
+			lcd = new Lcd2UsbClient();
+		} catch (IOException e) {
+			e.printStackTrace();
+			return;
+		}
+		lcd.setText(0,"%I:%M%p");
+		lcd.setText(1,"");
+		lcd.setText(2, "%x");
+		lcd.setText(3," ");
+		//Create GPIO controller and buttons
+		/* This creates an array containing the buttons on the physical control panel.
+		 * Currently it must be passed though to any object that requires input.
+		 * Object "lcd" above must be treated in a similar manner at this time.
+		 */
+		final GpioController gpio = GpioFactory.getInstance();
+		//Buttons physically connect their GPIO pin to ground when pressed, so pull-up resistor is used here.
+		GpioPinDigitalInput menuButton = gpio.provisionDigitalInputPin(RaspiPin.GPIO_01,
+				"Menu", PinPullResistance.PULL_UP);
+		GpioPinDigitalInput selectButton = gpio.provisionDigitalInputPin(RaspiPin.GPIO_04,
+				"Menu", PinPullResistance.PULL_UP);
+		GpioPinDigitalInput downButton = gpio.provisionDigitalInputPin(RaspiPin.GPIO_05,
+				"Menu", PinPullResistance.PULL_UP);
+		GpioPinDigitalInput upButton = gpio.provisionDigitalInputPin(RaspiPin.GPIO_06,
+				"Menu", PinPullResistance.PULL_UP);
+		//Create ArrayList for buttons to pass for settings menu functions.
+		GpioPinDigitalInput controlPanel[] = {menuButton, selectButton, downButton, upButton};
+		Clock clock = new Clock(controlPanel);
 		boolean[] days = {false, false, false, false, false ,false, false};
 		clock.setAlarm(LocalTime.now().plusSeconds(5), null, days);
 		clock.setAlarm(LocalTime.now().plusSeconds(7), null, days);
@@ -33,8 +65,20 @@ private static final long ERROR = 500;
 				total = 0;
 				initial = System.currentTimeMillis();
 			}
+			//If menu button is pressed, enter settings
+			if(controlPanel[0].isLow()){
+				Settings settingsMenu = new Settings(lcd, controlPanel, clock);
+				try {
+					settingsMenu.start();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+
+			}
 			clock.tick(LocalTime.now(), LocalDate.now(), api);			
 		}
 	}
+
+
 
 }

@@ -15,7 +15,7 @@ public class MainClockProcess {
 
 	public static void main(String[] args) {
     
-		//Display default display
+		//Default Display Settings
 		Lcd2UsbClient lcd;
 		try {
 			lcd = new Lcd2UsbClient();
@@ -47,8 +47,8 @@ public class MainClockProcess {
 		
 		//Create ArrayList for buttons to pass for settings menu functions.
 		GpioPinDigitalInput controlPanel[] = {menuButton, selectButton, downButton, upButton};
-
-		Clock c = new Clock(controlPanel);
+/*
+		Clock c = new Clock();
 		//c.setAlarm(LocalTime.now().plusSeconds(30), LocalDate.now(), true);
 		//c.setAlarm(LocalTime.now().plusSeconds(3), LocalDate.now(), false);
 		// Ideally, there'd be a check to see when the next alarm was and sleep until then or until an input interrupt woke it, but this works
@@ -76,7 +76,7 @@ public class MainClockProcess {
 			
 		} while (running);
 
-
+*/
 	}
 	
 	//Check physical input as well as APIs. Dummy function for now.

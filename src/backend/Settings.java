@@ -14,15 +14,14 @@ public class Settings {
     Clock clock;
     boolean dimScreen;
     int listOffset;
-    final String topLevelEntries[] = {"Set Time", "Set Date", "Set New Alarm", "Toggle Brightness", "Timezone Settings", "Volume Settings"};
-    final Runnable topLevelCommands[] = {this::timeSettings,this::dateSettings,
-            this::newAlarmSettings, this::toggleBrightness};
+    final String topLevelEntries[] = {"Set Time", "Set Date", "Toggle Brightness", "Time Sync"};
+    final Runnable topLevelCommands[] = {this::timeSettings, this::dateSettings,
+            this::toggleBrightness, this::NTPSettings};
+
     final String cursorString = "-> ";
     final String selectedCursorString = "* ";
 
-
-
-    public Settings(Lcd2UsbClient lcd, GpioPinDigitalInput[] controlPanel, Clock clock){
+    public Settings(Lcd2UsbClient lcd, GpioPinDigitalInput[] controlPanel, Clock clock) {
         this.lcd = lcd;
         this.controlPanel = controlPanel;
         this.clock = clock;
@@ -32,7 +31,7 @@ public class Settings {
     }
 
     public void start() throws InterruptedException, IOException {
-        while(controlPanel[0].isLow()){    //Wait for user to release the button
+        while (controlPanel[0].isLow()) {    //Wait for user to release the button
             Thread.sleep(50);           //Used for each button press below
         }
 
@@ -40,35 +39,32 @@ public class Settings {
         displayMenu(cursorPos, topLevelEntries);
         boolean active = true;
 
-        while (active){
+        while (active) {
             Thread.sleep(100);
 
-            if (controlPanel[2].isLow()){               //down
-                if (cursorPos < topLevelEntries.length - 1){
-                    cursorPos ++;
+            if (controlPanel[2].isLow()) {               //down
+                if (cursorPos < topLevelEntries.length - 1) {
+                    cursorPos++;
                 }
                 displayMenu(cursorPos, topLevelEntries);
-                while(controlPanel[2].isLow()){
+                while (controlPanel[2].isLow()) {
                     Thread.sleep(50);
                 }
-            }
-            else if (controlPanel[3].isLow()){          //up
-                if (cursorPos > 0){
-                    cursorPos --;
+            } else if (controlPanel[3].isLow()) {          //up
+                if (cursorPos > 0) {
+                    cursorPos--;
                 }
                 displayMenu(cursorPos, topLevelEntries);
-                while(controlPanel[3].isLow()){
+                while (controlPanel[3].isLow()) {
                     Thread.sleep(50);
                 }
-            }
-            else if (controlPanel[1].isLow()){          //select
+            } else if (controlPanel[1].isLow()) {          //select
                 resumeOnRelease(controlPanel[1]);
                 topLevelCommands[cursorPos].run();
                 displayMenu(cursorPos, topLevelEntries);
-            }
-            else if(controlPanel[0].isLow()){           //menu
+            } else if (controlPanel[0].isLow()) {           //menu
                 active = false;
-                while(controlPanel[0].isLow()){
+                while (controlPanel[0].isLow()) {
                     Thread.sleep(50);
                 }
             }
@@ -76,15 +72,16 @@ public class Settings {
         }
 
         //Return display to default state
-        lcd.setText(0,"%I:%M%p");
-        lcd.setText(1," ");
+        lcd.setText(0, "%I:%M%p");
+        lcd.setText(1, " ");
         lcd.setText(2, "%x");
-        lcd.setText(3," ");
+        lcd.setText(3, " ");
 
     }
+
     /*
-    ***Top Menu Commands***
-    * (cannot throw exceptions)
+     ***Top Menu Commands***
+     * (cannot throw exceptions)
      */
     private void dateSettings() {
         LocalDate currentDate = LocalDate.now();
@@ -102,98 +99,104 @@ public class Settings {
 
         displayMenu(cursorPos, textEntry, activeEntry);
 
-        while (active){
+        while (active) {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
 
-            if (controlPanel[2].isLow()){//down
-                if (cursorSelected){
-                    if (cursorPos == 0 && newY > LocalDate.MIN.getYear()){
+            if (controlPanel[2].isLow()) {//down
+                if (cursorSelected) {
+                    if (cursorPos == 0 && newY > LocalDate.MIN.getYear()) {
                         newY--;
                         activeEntry[0] = Integer.toString(newY);
                         lcd.setText(0, selectedCursorString + textEntry[0] + activeEntry[0]);
-                    }
-                    else if (cursorPos == 1 && newM > 0){
+                    } else if (cursorPos == 1 && newM > 0) {
                         newM--;
                         activeEntry[1] = Integer.toString(newM);
                         lcd.setText(1, selectedCursorString + textEntry[1] + activeEntry[1]);
-                    }
-                    else if (cursorPos == 2 && newD > 0){
+                    } else if (cursorPos == 2 && newD > 0) {
                         newD--;
                         activeEntry[2] = Integer.toString(newD);
                         lcd.setText(2, selectedCursorString + textEntry[2] + activeEntry[2]);
                     }
-                }
-                else{
-                    if (cursorPos < 3){
-                        cursorPos ++;
+                } else {
+                    if (cursorPos < 3) {
+                        cursorPos++;
                         displayMenu(cursorPos, textEntry, activeEntry);
                     }
                 }
 
-                while(controlPanel[2].isLow()){
-                    Thread.sleep(50);
-                }
-            }
-            else if (controlPanel[3].isLow()){//up
-                if (cursorSelected){
-                    if (cursorPos == 0 && newY < LocalDate.MAX.getYear() ){
-                        newY++;
-                        activeEntry[0] = Integer.toString(newY);;
-                        lcd.setText(0, selectedCursorString + textEntry[0] + activeEntry[0]);
+                while (controlPanel[2].isLow()) {
+                    try {
+                        Thread.sleep(50);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
                     }
-                    else if (cursorPos == 1 && newM < 12){
+                }
+            } else if (controlPanel[3].isLow()) {//up
+                if (cursorSelected) {
+                    if (cursorPos == 0 && newY < LocalDate.MAX.getYear()) {
+                        newY++;
+                        activeEntry[0] = Integer.toString(newY);
+                        ;
+                        lcd.setText(0, selectedCursorString + textEntry[0] + activeEntry[0]);
+                    } else if (cursorPos == 1 && newM < 12) {
                         newM++;
                         activeEntry[1] = Integer.toString(newM);
                         lcd.setText(1, selectedCursorString + textEntry[1] + activeEntry[1]);
-                    }
-                    else if (cursorPos == 2 && newD < 31){ //Need to account for months with less than 31 days
+                    } else if (cursorPos == 2 && newD < 31) { //Need to account for months with less than 31 days
                         newD++;
                         activeEntry[2] = Integer.toString(newD);
                         lcd.setText(2, selectedCursorString + textEntry[2] + activeEntry[2]);
                     }
-                }
-                else{
-                    if (cursorPos > 0){
-                        cursorPos --;
+                } else {
+                    if (cursorPos > 0) {
+                        cursorPos--;
                         displayMenu(cursorPos, textEntry, activeEntry);
                     }
                 }
-                while(controlPanel[3].isLow()){
-                    Thread.sleep(50);
+                while (controlPanel[3].isLow()) {
+                    try {
+                        Thread.sleep(50);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
-            }
-            else if (controlPanel[1].isLow()){//select
-                if (cursorPos == 3){
+            } else if (controlPanel[1].isLow()) {//select
+                if (cursorPos == 3) {
                     try {
                         LinuxTimeControl.setDate(newY, newM, newD);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
                     active = false;
-                }
-                else{
+                } else {
                     cursorSelected = true;
-                    lcd.setText(cursorPos, selectedCursorString + textEntry[cursorPos]+ activeEntry[cursorPos]);
+                    lcd.setText(cursorPos, selectedCursorString + textEntry[cursorPos] + activeEntry[cursorPos]);
                 }
-                while(controlPanel[1].isLow()){
-                    Thread.sleep(50);
+                while (controlPanel[1].isLow()) {
+                    try {
+                        Thread.sleep(50);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
 
-            }
-            else if(controlPanel[0].isLow()){//menu
-                if (cursorSelected){
+            } else if (controlPanel[0].isLow()) {//menu
+                if (cursorSelected) {
                     cursorSelected = false;
                     displayMenu(cursorPos, textEntry, activeEntry);
-                }
-                else{
+                } else {
                     active = false;
                 }
-                while(controlPanel[0].isLow()){
-                    Thread.sleep(50);
+                while (controlPanel[0].isLow()) {
+                    try {
+                        Thread.sleep(50);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
 
@@ -215,95 +218,103 @@ public class Settings {
 
         displayMenu(cursorPos, textEntry, activeEntry);
 
-        while (active){
+        while (active) {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
 
-            if (controlPanel[2].isLow()){//down
-                if (cursorSelected){
-                    if (cursorPos == 0 && newHr > 0){
+            if (controlPanel[2].isLow()) {//down
+                if (cursorSelected) {
+                    if (cursorPos == 0 && newHr > 0) {
                         newHr--;
                         activeEntry[0] = Integer.toString(newHr);
                         lcd.setText(0, selectedCursorString + textEntry[0] + activeEntry[0]);
-                    }
-                    else if (cursorPos == 1 && newMin > 0){
+                    } else if (cursorPos == 1 && newMin > 0) {
                         newMin--;
                         activeEntry[1] = Integer.toString(newMin);
                         lcd.setText(1, selectedCursorString + textEntry[1] + activeEntry[1]);
                     }
-                }
-                else{
-                    if (cursorPos < 3){
-                        cursorPos ++;
+                } else {
+                    if (cursorPos < 3) {
+                        cursorPos++;
                         displayMenu(cursorPos, textEntry, activeEntry);
                     }
                 }
 
-                while(controlPanel[2].isLow()){
-                    Thread.sleep(50);
-                }
-            }
-            else if (controlPanel[3].isLow()){//up
-                if (cursorSelected){
-                    if (cursorPos == 0 && newHr < 23 ){
-                        newHr++;
-                        activeEntry[0] = Integer.toString(newHr);;
-                        lcd.setText(0, selectedCursorString + textEntry[0] + activeEntry[0]);
+                while (controlPanel[2].isLow()) {
+                    try {
+                        Thread.sleep(50);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
                     }
-                    else if (cursorPos == 1 && newMin < 59){
+                }
+            } else if (controlPanel[3].isLow()) {//up
+                if (cursorSelected) {
+                    if (cursorPos == 0 && newHr < 23) {
+                        newHr++;
+                        activeEntry[0] = Integer.toString(newHr);
+                        ;
+                        lcd.setText(0, selectedCursorString + textEntry[0] + activeEntry[0]);
+                    } else if (cursorPos == 1 && newMin < 59) {
                         newMin++;
                         activeEntry[1] = Integer.toString(newMin);
                         lcd.setText(1, selectedCursorString + textEntry[1] + activeEntry[1]);
                     }
-                }
-                else{
-                    if (cursorPos > 0){
-                        cursorPos --;
+                } else {
+                    if (cursorPos > 0) {
+                        cursorPos--;
                         displayMenu(cursorPos, textEntry, activeEntry);
                     }
                 }
-                while(controlPanel[3].isLow()){
-                    Thread.sleep(50);
+                while (controlPanel[3].isLow()) {
+                    try {
+                        Thread.sleep(50);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
-            }
-            else if (controlPanel[1].isLow()){//select
-                if (cursorPos == 2){
+            } else if (controlPanel[1].isLow()) {//select
+                if (cursorPos == 2) {
                     try {
                         LinuxTimeControl.setTime(newHr, newMin);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
                     active = false;
-                }
-                else{
+                } else {
                     cursorSelected = true;
-                    lcd.setText(cursorPos, selectedCursorString + textEntry[cursorPos]+ activeEntry[cursorPos]);
+                    lcd.setText(cursorPos, selectedCursorString + textEntry[cursorPos] + activeEntry[cursorPos]);
                 }
-                while(controlPanel[1].isLow()){
-                    Thread.sleep(50);
+                while (controlPanel[1].isLow()) {
+                    try {
+                        Thread.sleep(50);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
 
-            }
-            else if(controlPanel[0].isLow()){//menu
-                if (cursorSelected){
+            } else if (controlPanel[0].isLow()) {//menu
+                if (cursorSelected) {
                     cursorSelected = false;
                     displayMenu(cursorPos, textEntry, activeEntry);
-                }
-                else{
+                } else {
                     active = false;
                 }
-                while(controlPanel[0].isLow()){
-                    Thread.sleep(50);
+                while (controlPanel[0].isLow()) {
+                    try {
+                        Thread.sleep(50);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
 
         }
     }
 
-    private void newAlarmSettings() {
+   /* private void newAlarmSettings() throws InterruptedException {
         LocalTime currentTime = LocalTime.now();
 
         int newHr = currentTime.getHour();
@@ -318,112 +329,102 @@ public class Settings {
 
         displayMenu(cursorPos, textEntry, activeEntry);
 
-        while (active){
+        while (active) {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
 
-            if (controlPanel[2].isLow()){//down
-                if (cursorSelected){
-                    if (cursorPos == 0 && newHr > 0){
+            if (controlPanel[2].isLow()) {//down
+                if (cursorSelected) {
+                    if (cursorPos == 0 && newHr > 0) {
                         newHr--;
                         activeEntry[0] = Integer.toString(newHr);
                         lcd.setText(0, selectedCursorString + textEntry[0] + activeEntry[0]);
-                    }
-                    else if (cursorPos == 1 && newMin > 0){
+                    } else if (cursorPos == 1 && newMin > 0) {
                         newMin--;
                         activeEntry[1] = Integer.toString(newMin);
                         lcd.setText(1, selectedCursorString + textEntry[1] + activeEntry[1]);
                     }
-                }
-                else{
-                    if (cursorPos < 3){
-                        cursorPos ++;
+                } else {
+                    if (cursorPos < 3) {
+                        cursorPos++;
                         displayMenu(cursorPos, textEntry, activeEntry);
                     }
                 }
 
-                while(controlPanel[2].isLow()){
+                while (controlPanel[2].isLow()) {
                     Thread.sleep(50);
                 }
-            }
-            else if (controlPanel[3].isLow()){//up
-                if (cursorSelected){
-                    if (cursorPos == 0 && newHr < 23 ){
+            } else if (controlPanel[3].isLow()) {//up
+                if (cursorSelected) {
+                    if (cursorPos == 0 && newHr < 23) {
                         newHr++;
-                        activeEntry[0] = Integer.toString(newHr);;
+                        activeEntry[0] = Integer.toString(newHr);
+                        ;
                         lcd.setText(0, selectedCursorString + textEntry[0] + activeEntry[0]);
-                    }
-                    else if (cursorPos == 1 && newMin < 59){
+                    } else if (cursorPos == 1 && newMin < 59) {
                         newMin++;
                         activeEntry[1] = Integer.toString(newMin);
                         lcd.setText(1, selectedCursorString + textEntry[1] + activeEntry[1]);
                     }
-                }
-                else{
-                    if (cursorPos > 0){
-                        cursorPos --;
+                } else {
+                    if (cursorPos > 0) {
+                        cursorPos--;
                         displayMenu(cursorPos, textEntry, activeEntry);
                     }
                 }
-                while(controlPanel[3].isLow()){
+                while (controlPanel[3].isLow()) {
                     Thread.sleep(50);
                 }
-            }
-            else if (controlPanel[1].isLow()){//select
-                if (cursorPos == 2){
+            } else if (controlPanel[1].isLow()) {//select
+                if (cursorPos == 2) {
                     LocalTime alarmTime = LocalTime.of(newHr, newMin);
-                    clock.setAlarm(alarmTime,LocalDate.now(),false, "Atlanta, GA", "Rome, GA"); //STRINGS ARE PLACEHOLDERS!!!
+                    clock.setAlarm(alarmTime, LocalDate.now(), false, "Atlanta, GA", "Rome, GA"); //STRINGS ARE PLACEHOLDERS!!!
                     active = false;
-                }
-                else if(cursorPos == 3){
+                } else if (cursorPos == 3) {
                     LocalTime alarmTime = LocalTime.of(newHr, newMin);
                     LocalDate alarmDate = LocalDate.now();
                     alarmDate.plusDays(1);
 
-                    clock.setAlarm(alarmTime,alarmDate,false, "Atlanta, GA", "Rome, GA"); //SRINGS ARE PLACEHOLDERS!!!
+                    clock.setAlarm(alarmTime, alarmDate, false, "Atlanta, GA", "Rome, GA"); //SRINGS ARE PLACEHOLDERS!!!
                     active = false;
-                }
-                else{
+                } else {
                     cursorSelected = true;
-                    lcd.setText(cursorPos, selectedCursorString + textEntry[cursorPos]+ activeEntry[cursorPos]);
+                    lcd.setText(cursorPos, selectedCursorString + textEntry[cursorPos] + activeEntry[cursorPos]);
                 }
-                while(controlPanel[1].isLow()){
+                while (controlPanel[1].isLow()) {
                     Thread.sleep(50);
                 }
 
-            }
-            else if(controlPanel[0].isLow()){//menu
-                if (cursorSelected){
+            } else if (controlPanel[0].isLow()) {//menu
+                if (cursorSelected) {
                     cursorSelected = false;
                     displayMenu(cursorPos, textEntry, activeEntry);
-                }
-                else{
+                } else {
                     active = false;
                 }
-                while(controlPanel[0].isLow()){
+                while (controlPanel[0].isLow()) {
                     Thread.sleep(50);
                 }
             }
 
         }
 
-    }
+    }*/
 
-    private void toggleBrightness(){
-        if(dimScreen){
+    private void toggleBrightness() {
+        if (dimScreen) {
             lcd.setBrightness(200);
             dimScreen = false;
-        }
-        else{
+        } else {
             lcd.setBrightness(0);
             dimScreen = true;
         }
     }
 
-    private void NTPSettings(){
+    private void NTPSettings() {
         int cursorPos = 0;
         String textEntry[] = {"Turn on time sync", "Turn off time sync", "Set Timezone", " "};
         Boolean active = true;
@@ -436,87 +437,78 @@ public class Settings {
                 e.printStackTrace();
             }
 
-            if (controlPanel[2].isLow()){               //down
-                if (cursorPos >= 2)
-                {
+            if (controlPanel[2].isLow()) {               //down
+                if (cursorPos >= 2) {
                     cursorPos++;
                 }
                 displayMenu(cursorPos, textEntry);
                 resumeOnRelease(controlPanel[2]);
-            }
-            else if (controlPanel[3].isLow()){          //up
-                if (cursorPos > 0){
-                    cursorPos --;
+            } else if (controlPanel[3].isLow()) {          //up
+                if (cursorPos > 0) {
+                    cursorPos--;
                 }
                 displayMenu(cursorPos, textEntry);
                 resumeOnRelease(controlPanel[3]);
-            }
-            else if (controlPanel[1].isLow()){          //select
+            } else if (controlPanel[1].isLow()) {          //select
                 resumeOnRelease(controlPanel[1]);
-                if(cursorPos ==0) {
+                if (cursorPos == 0) {
                     try {
-                        LinuxTimeControl.enableNTP();
+                        LinuxTimeControl.setNTP(true);
                     } catch (IOException e) {
                         e.printStackTrace();   //display error on lcd instead?
                     }
-                }
-                else if (cursorPos ==1){
+                } else if (cursorPos == 1) {
                     try {
-                        LinuxTimeControl.disableNTP();
+                        LinuxTimeControl.setNTP(false);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                }
-                else if (cursorPos == 2){
+                } else if (cursorPos == 2) {
                     //not yet available
                 }
                 displayMenu(cursorPos, textEntry);
-            }
-            else if(controlPanel[0].isLow()){           //menu
+            } else if (controlPanel[0].isLow()) {           //menu
                 active = false;
                 resumeOnRelease(controlPanel[0]);
             }
         }
     }
+
     /*
-    ***Other Functions***
+     ***Other Functions***
      */
-    private void displayMenu(int cursor, String entries[]){
-        if (cursor < listOffset){
+    private void displayMenu(int cursor, String entries[]) {
+        if (cursor < listOffset) {
             listOffset--;    //scrolls entries list up
-        }
-        else if (cursor > listOffset + 3){
+        } else if (cursor > listOffset + 3) {
             listOffset++;    //scrolls entries list down
         }
-        for (int i = 0;i < 4; i++){
-            if (i == cursor){
-                lcd.setText(i,cursorString + entries[i + listOffset]);
-            }
-            else{
+        for (int i = 0; i < 4; i++) {
+            if (i == cursor) {
+                lcd.setText(i, cursorString + entries[i + listOffset]);
+            } else {
                 lcd.setText(i, entries[i + listOffset]);
             }
         }
     }
 
-    private void displayMenu(int cursor, String entries[], String secondaryEntries[]){
-        if (cursor < listOffset){
+    private void displayMenu(int cursor, String entries[], String secondaryEntries[]) {
+        if (cursor < listOffset) {
             listOffset--;    //scrolls entries list up
-        }
-        else if (cursor > listOffset + 3){
+        } else if (cursor > listOffset + 3) {
             listOffset++;    //scrolls entries list down
         }
-        for (int i = 0;i < 4; i++){
-            if (i == cursor){
-                lcd.setText(i,cursorString + entries[i + listOffset] + secondaryEntries[i + listOffset]);
-            }
-            else{
+        for (int i = 0; i < 4; i++) {
+            if (i == cursor) {
+                lcd.setText(i, cursorString + entries[i + listOffset] + secondaryEntries[i + listOffset]);
+            } else {
                 lcd.setText(i, entries[i + listOffset] + secondaryEntries[i + listOffset]);
             }
         }
     }
 
-    private void resumeOnRelease(GpioPinDigitalInput pressedButton){
-        while(pressedButton.isLow()){
+    private void resumeOnRelease(GpioPinDigitalInput pressedButton) {
+        while (pressedButton.isLow()) {
             try {
                 Thread.sleep(50);
             } catch (InterruptedException e) {
@@ -524,4 +516,5 @@ public class Settings {
             }
         }
 
+    }
 }

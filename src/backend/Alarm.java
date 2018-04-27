@@ -90,13 +90,12 @@ public class Alarm implements Comparable<Alarm>{
     }
 
     public boolean isRepeat() {
-        return repeat;
+        for (boolean b : days)
+            if(b)
+                return false;
+        return true;
     }
-
-    public void setRepeat(boolean repeat) {
-        this.repeat = repeat;
-    }
-
+    /*
     public boolean isAutoAdvance() {
         return autoAdvance;
     }
@@ -104,7 +103,7 @@ public class Alarm implements Comparable<Alarm>{
     public void setAutoAdvance(boolean autoAdvance) {
         this.autoAdvance = autoAdvance;
     }
-
+    */
     public String getOrigin() {
         return origin;
     }

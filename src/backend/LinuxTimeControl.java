@@ -58,4 +58,23 @@ public class LinuxTimeControl {
 
     }
 
+    public static void setNTP(boolean newStatus) throws IOException {
+        ArrayList<String> argumentList = new ArrayList<>();
+        //Build argument list for ProcessBuilder
+        //argumentList.add("sudo"); //requires the NOPASSWD option in sudoer's file
+        //argumentList.add("-n");
+        argumentList.add("systemctl");
+        if(newStatus){
+            argumentList.add("start");
+        }
+        else{
+            argumentList.add("stop");
+        }
+
+        argumentList.add("ntp.service");
+
+        ProcessBuilder dateProcess = new ProcessBuilder(argumentList);
+        dateProcess.start();
+    }
+
 }
