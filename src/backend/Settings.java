@@ -369,7 +369,7 @@ public class Settings {
 
     private void NTPSettings() {
         int cursorPos = 0;
-        String textEntry[] = {"Turn on time sync", "Turn off time sync", "Set Timezone", " "};
+        String textEntry[] = {"Turn on time sync", "Turn off time sync", "Detect Timezone", " "};
         Boolean active = true;
         displayMenu(cursorPos, textEntry);
         while (active) {
@@ -379,7 +379,7 @@ public class Settings {
                 e.printStackTrace();
             }
             if (controlPanel[2].isLow()) {               //down
-                if (cursorPos >= 2) {
+                if (cursorPos <= 2) {
                     cursorPos++;
                 }
                 displayMenu(cursorPos, textEntry);
@@ -405,7 +405,11 @@ public class Settings {
                         e.printStackTrace();
                     }
                 } else if (cursorPos == 2) {
-                    //not yet available
+                    try {
+                        LinuxTimeControl.setTZ();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
                 displayMenu(cursorPos, textEntry);
             } else if (controlPanel[0].isLow()) {           //menu

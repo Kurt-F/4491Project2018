@@ -69,10 +69,35 @@ public class LinuxTimeControl {
         else{
             argumentList.add("stop");
         }
-        argumentList.add("ntp.service");
+        argumentList.add("systemd-timesyncd.service");
 
-        ProcessBuilder dateProcess = new ProcessBuilder(argumentList);
-        dateProcess.start();
+        ProcessBuilder ntpProcess = new ProcessBuilder(argumentList);
+        ntpProcess.start();
+
+        //Enable after starting. saves setting through reboots.
+        argumentList = new ArrayList<>();
+        argumentList.add("systemctl");
+        if(newStatus){
+            argumentList.add("enable");
+        }
+        else{
+            argumentList.add("disable");
+        }
+        argumentList.add("systemd-timesyncd.service");
+
+        ntpProcess = new ProcessBuilder(argumentList);
+        ntpProcess.start();
+    }
+
+    public static void setTZ() throws IOException{
+        ArrayList<String> argumentList = new ArrayList<>();
+        //Build argument list for ProcessBuilder
+        //argumentList.add("sudo"); //requires the NOPASSWD option in sudoer's file
+        //argumentList.add("-n");
+        argumentList.add("tzupdate");
+
+        ProcessBuilder tzProcess = new ProcessBuilder(argumentList);
+        tzProcess.start();
     }
 
 }
