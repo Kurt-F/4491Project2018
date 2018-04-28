@@ -41,9 +41,9 @@ public class Clock {
 	//Debug flag
 	private static final boolean DEBUG = true;
 	// The cloud server name
-	//private static final String HOSTNAME = "http://www.smart-clock.xyz.com";
+	private static final String HOSTNAME = "http://www.smart-clock.xyz:8123";
 	// Temporary hostname for the development server
-	private static final String HOSTNAME = "http://192.168.1.69:8123";
+	//private static final String HOSTNAME = "http://192.168.1.69:8123";
 	//An array of Lists of alarms
 	private LinkedList<Alarm> alarms;
 	// The current time shift
