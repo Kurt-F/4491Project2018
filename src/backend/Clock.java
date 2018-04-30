@@ -41,7 +41,7 @@ public class Clock {
 	//Debug flag
 	private static final boolean DEBUG = true;
 	// The cloud server name
-	private static final String HOSTNAME = "http://www.smart-clock.xyz:8123";
+	private static final String HOSTNAME = "http://www.smart-clock.xyz";
 	// Temporary hostname for the development server
 	//private static final String HOSTNAME = "http://192.168.1.69:8123";
 	//An array of Lists of alarms
@@ -141,7 +141,6 @@ public class Clock {
 	/**
 	 * Set an autoadvance alarm
 	 * @param t
-	 * @param r
 	 * @param k
 	 * @param days
 	 * @param o Origin Address 
@@ -276,7 +275,7 @@ public class Clock {
 		//Placeholder to show that an alarm has been tripped
 		System.out.println("Alarm set for " + a.getTime().toString() + " has been tripped!");
 		//Start playback of alarm sound
-		AlarmPlayer.loopAlarm(controlPanel);
+		a.tripAlarm(controlPanel);
 	}
 				
 	
@@ -425,7 +424,12 @@ public class Clock {
 	
 	//Get day of week shifted to 0-6
 	private static int getDayCode(LocalDate d) {
-		return d.getDayOfWeek().getValue() - 1;
+		int weekDayNum = d.getDayOfWeek().getValue();
+		if (weekDayNum == 7)//Converts Sunday from the last to first day of week.
+			return 0;
+		else{
+			return weekDayNum ; //+1 to get US weekday number, -1 to start index at 0
+		}
 	}
 	
 	//Helper to make printing easier

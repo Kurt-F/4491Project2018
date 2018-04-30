@@ -56,6 +56,7 @@ private static final long ERROR = 500;
 		// Check alarms every second. 
 		long total = 0;
 		long initial = System.currentTimeMillis();
+		System.out.println("Entering main loop...");
 		while(true){
 			total += System.currentTimeMillis() - initial;
 			Thread.sleep(1000);
@@ -77,6 +78,16 @@ private static final long ERROR = 500;
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
+			}
+			// Force server check
+			if(controlPanel[1].isLow()){
+				clock.sync();
+			}
+			// Force API access
+			if(controlPanel[2].isLow()){
+				api = true;
+				total = 0;
+				initial = System.currentTimeMillis();
 			}
 			clock.tick(LocalTime.now(), LocalDate.now(), api);			
 		}

@@ -42,6 +42,7 @@ public class AlarmPlayer {
                 playbackProcess.destroy();
                 running = false;
                 snooze = false;
+                // Wait for release
                 while(controlPanel[0].isLow()){
                     try {
                         Thread.sleep(50);
@@ -54,7 +55,8 @@ public class AlarmPlayer {
                 playbackProcess.destroy();
                 running = false;
                 snooze = true;
-                while(controlPanel[0].isLow()){
+                // Wait for release
+                while(controlPanel[1].isLow()){
                     try {
                         Thread.sleep(50);
                     } catch (InterruptedException e) {

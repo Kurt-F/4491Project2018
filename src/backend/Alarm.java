@@ -2,6 +2,8 @@ package backend;
 
 import com.pi4j.io.gpio.GpioPinDigitalInput;
 
+import java.io.IOException;
+import java.time.LocalDate;
 import java.time.LocalTime;
 
 import org.json.*;
@@ -21,6 +23,7 @@ public class Alarm implements Comparable<Alarm>{
      */
 	final String label;
     LocalTime time;
+    LocalDate lastTripped; //Last day the alarm was tripped
     Integer primarykey; // Used for synchronising with the clock
     boolean Repeat;
     boolean[] days;
@@ -45,6 +48,7 @@ public class Alarm implements Comparable<Alarm>{
         	if(b)
         		this.Repeat = true;
         this.AutoAdvance = false;
+        lastTripped = LocalDate.MIN;
     }
 
     public Alarm(LocalTime time, Integer k, boolean[] d, String origin, String destination, String s) {
@@ -63,26 +67,77 @@ public class Alarm implements Comparable<Alarm>{
         this.AutoAdvance = true;
         this.origin = origin;
         this.destination = destination;
+        lastTripped = LocalDate.MIN;
 
     }
 
     public void tripAlarm(GpioPinDigitalInput[] controlPanel){
-        String fileList[];
         boolean snooze;
-
-        if (!randomAudio){
-            fileList = new String[]{alarmAudio};
+        lastTripped = LocalDate.now();
+        try {
+            ConnectedLight light = new ConnectedLight("192.168.50.189");//Light ip
+            light.increaseBrightness(200);
+        } catch (IOException e) {
+            System.out.println("Unable to connect to light.");
         }
-        else {
-            fileList = new String[]{"Alarm_Beep_01.ogg", "Alarm_Beep_02.ogg",
-                    "Alarm_Beep_03.ogg", "Alarm_Buzzer.ogg", "Alarm_Classic.ogg"};
+        snooze = AlarmPlayer.loopAlarm(controlPanel);
+        if (snooze){
+            System.out.println("Entering snooze mode...");
+            try {
+                snoozeMode(controlPanel);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+                return;
+            }
         }
-        snooze = AlarmPlayer.loopAlarm(controlPanel, fileList);
     }
 
+    public void snoozeMode(GpioPinDigitalInput[] controlPanel) throws InterruptedException {
+        long nanosecPerSec = 1000*1000*1000;
+        long startTime = System.nanoTime();
+        while ((System.nanoTime()-startTime)< 10*60*nanosecPerSec){
+            if (controlPanel[0].isLow()){
+                while (controlPanel[0].isLow()){
+                    Thread.sleep(50);
+                }
+                return;
+            }
+            else {
+                Thread.sleep(50);
+            }
+        }
+        tripAlarm(controlPanel);
+
+    }
+
+    public boolean trippedToday(){
+        return lastTripped.isEqual(LocalDate.now());
+    }
 
     public LocalTime getTime() {
         return time;
+    }
+
+    public LocalDate getNextDate() {
+        if(isRepeat()){
+            LocalDate nextDate = LocalDate.now();
+            if (lastTripped.isEqual(LocalDate.now())){
+                nextDate.plusDays(1);
+            }
+            while(!days[getDayCode(nextDate)]) {
+                nextDate.plusDays(1);
+            }
+            return nextDate;
+        }
+        else{
+            //If the alarm does not repeat and is after current time:
+            if(time.isAfter(LocalTime.now())){
+                return LocalDate.now();
+            }
+            else{
+                return LocalDate.now().plusDays(1);
+            }
+        }
     }
 
     public void setTime(LocalTime time) {
@@ -190,6 +245,16 @@ public class Alarm implements Comparable<Alarm>{
     		a = new Alarm(t, p, days, o, d, s);
     	}
 		return a;
+    }
+
+    //Get day of week shifted to 0-6
+    private static int getDayCode(LocalDate d) {
+        int weekDayNum = d.getDayOfWeek().getValue();
+        if (weekDayNum == 7)//Converts Sunday from the last to first day of week.
+            return 0;
+        else{
+            return weekDayNum ; //+1 to get US weekday number, -1 to start index at 0
+        }
     }
     
     @Override
